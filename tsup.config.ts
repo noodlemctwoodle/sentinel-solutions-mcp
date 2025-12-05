@@ -5,7 +5,7 @@ export default defineConfig({
   format: ['esm'],
   target: 'node18',
   outDir: 'dist',
-  clean: true,
+  clean: ['**/*', '!pre-built-index.json'],  // Clean everything except pre-built index
   sourcemap: true,
   dts: true,
   shims: true,

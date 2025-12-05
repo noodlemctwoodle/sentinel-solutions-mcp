@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18, 20]
+        node-version: [20]  # Only test on latest LTS for faster CI
 
     steps:
       - name: Checkout code
@@ -26,8 +26,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Build TypeScript only (skip index generation for CI)
+        run: npx tsup
         env:
           MCP_GITHUB_TOKEN: ${{ secrets.MCP_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
 

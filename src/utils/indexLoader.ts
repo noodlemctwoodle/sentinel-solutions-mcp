@@ -17,7 +17,7 @@ const __dirname = path.dirname(__filename);
 export function loadPreBuiltIndex(): AnalysisResult | null {
   try {
     // The pre-built index is in dist/ alongside the compiled code
-    const indexPath = path.join(__dirname, '../pre-built-index.json');
+    const indexPath = path.join(__dirname, 'pre-built-index.json');
 
     if (!fs.existsSync(indexPath)) {
       console.error('Pre-built index not found at:', indexPath);
