@@ -362,21 +362,39 @@ export const listDetectionsTool = {
     severity: z.string().optional().describe('Filter by severity (Informational, Low, Medium, High, Critical)'),
     tactic: z.string().optional().describe('Filter by MITRE ATT&CK tactic'),
     technique: z.string().optional().describe('Filter by MITRE ATT&CK technique'),
+    force_refresh: z.boolean().optional().describe('Force refresh from GitHub'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: DetectionFilters & { repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Detection[]> => {
-    const repoConfig = {
-      owner: args.repository_owner,
-      name: args.repository_name,
-      branch: args.repository_branch,
-    };
+  execute: async (args: DetectionFilters & { force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Detection[]> => {
+    // Check if using default repository and pre-built index is available
+    const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
-    const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
-    const analyzer = new ContentAnalyzer(github);
+    let detections: Detection[];
 
-    let detections = await analyzer.listDetections();
+    if (!args.force_refresh && isDefaultRepo) {
+      // Try to use pre-built index
+      const preBuiltIndex = loadPreBuiltIndex();
+      if (preBuiltIndex?.detections) {
+        detections = preBuiltIndex.detections;
+      } else {
+        // Fall back to GitHub
+        const github = new (await import('../repository/githubClient.js')).GitHubClient();
+        const analyzer = new ContentAnalyzer(github);
+        detections = await analyzer.listDetections();
+      }
+    } else {
+      // Fetch from GitHub (custom repo or force_refresh)
+      const repoConfig = {
+        owner: args.repository_owner,
+        name: args.repository_name,
+        branch: args.repository_branch,
+      };
+      const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+      const analyzer = new ContentAnalyzer(github);
+      detections = await analyzer.listDetections();
+    }
 
     // Apply filters
     if (args.solution) {
@@ -404,21 +422,40 @@ export const getDetectionDetailsTool = {
   description: 'Get detailed information about a specific detection rule',
   inputSchema: z.object({
     detection_id: z.string().describe('The detection rule ID'),
+    force_refresh: z.boolean().optional().describe('Force refresh from GitHub'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: { detection_id: string; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Detection | null> => {
-    const repoConfig = {
-      owner: args.repository_owner,
-      name: args.repository_name,
-      branch: args.repository_branch,
-    };
+  execute: async (args: { detection_id: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Detection | null> => {
+    // Check if using default repository and pre-built index is available
+    const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
-    const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
-    const analyzer = new ContentAnalyzer(github);
+    let detections: Detection[];
 
-    const detections = await analyzer.listDetections();
+    if (!args.force_refresh && isDefaultRepo) {
+      // Try to use pre-built index
+      const preBuiltIndex = loadPreBuiltIndex();
+      if (preBuiltIndex?.detections) {
+        detections = preBuiltIndex.detections;
+      } else {
+        // Fall back to GitHub
+        const github = new (await import('../repository/githubClient.js')).GitHubClient();
+        const analyzer = new ContentAnalyzer(github);
+        detections = await analyzer.listDetections();
+      }
+    } else {
+      // Fetch from GitHub (custom repo or force_refresh)
+      const repoConfig = {
+        owner: args.repository_owner,
+        name: args.repository_name,
+        branch: args.repository_branch,
+      };
+      const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+      const analyzer = new ContentAnalyzer(github);
+      detections = await analyzer.listDetections();
+    }
+
     return detections.find(d => d.id === args.detection_id) || null;
   },
 };
@@ -432,21 +469,35 @@ export const listWorkbooksTool = {
   inputSchema: z.object({
     solution: z.string().optional().describe('Filter by solution name'),
     category: z.string().optional().describe('Filter by workbook category'),
+    force_refresh: z.boolean().optional().describe('Force refresh from GitHub'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: WorkbookFilters & { repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Workbook[]> => {
-    const repoConfig = {
-      owner: args.repository_owner,
-      name: args.repository_name,
-      branch: args.repository_branch,
-    };
+  execute: async (args: WorkbookFilters & { force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Workbook[]> => {
+    const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
-    const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
-    const analyzer = new ContentAnalyzer(github);
+    let workbooks: Workbook[];
 
-    let workbooks = await analyzer.listWorkbooks();
+    if (!args.force_refresh && isDefaultRepo) {
+      const preBuiltIndex = loadPreBuiltIndex();
+      if (preBuiltIndex?.workbooks) {
+        workbooks = preBuiltIndex.workbooks;
+      } else {
+        const github = new (await import('../repository/githubClient.js')).GitHubClient();
+        const analyzer = new ContentAnalyzer(github);
+        workbooks = await analyzer.listWorkbooks();
+      }
+    } else {
+      const repoConfig = {
+        owner: args.repository_owner,
+        name: args.repository_name,
+        branch: args.repository_branch,
+      };
+      const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+      const analyzer = new ContentAnalyzer(github);
+      workbooks = await analyzer.listWorkbooks();
+    }
 
     // Apply filters
     if (args.solution) {
@@ -468,21 +519,36 @@ export const getWorkbookDetailsTool = {
   description: 'Get detailed information about a specific workbook',
   inputSchema: z.object({
     workbook_id: z.string().describe('The workbook ID or file path'),
+    force_refresh: z.boolean().optional().describe('Force refresh from GitHub'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: { workbook_id: string; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Workbook | null> => {
-    const repoConfig = {
-      owner: args.repository_owner,
-      name: args.repository_name,
-      branch: args.repository_branch,
-    };
+  execute: async (args: { workbook_id: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Workbook | null> => {
+    const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
-    const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
-    const analyzer = new ContentAnalyzer(github);
+    let workbooks: Workbook[];
 
-    const workbooks = await analyzer.listWorkbooks();
+    if (!args.force_refresh && isDefaultRepo) {
+      const preBuiltIndex = loadPreBuiltIndex();
+      if (preBuiltIndex?.workbooks) {
+        workbooks = preBuiltIndex.workbooks;
+      } else {
+        const github = new (await import('../repository/githubClient.js')).GitHubClient();
+        const analyzer = new ContentAnalyzer(github);
+        workbooks = await analyzer.listWorkbooks();
+      }
+    } else {
+      const repoConfig = {
+        owner: args.repository_owner,
+        name: args.repository_name,
+        branch: args.repository_branch,
+      };
+      const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+      const analyzer = new ContentAnalyzer(github);
+      workbooks = await analyzer.listWorkbooks();
+    }
+
     return workbooks.find(w => w.id === args.workbook_id || w.filePath === args.workbook_id) || null;
   },
 };
@@ -497,21 +563,38 @@ export const listHuntingQueriesTool = {
     solution: z.string().optional().describe('Filter by solution name'),
     tactic: z.string().optional().describe('Filter by MITRE ATT&CK tactic'),
     technique: z.string().optional().describe('Filter by MITRE ATT&CK technique'),
+    force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: HuntingQueryFilters & { repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<HuntingQuery[]> => {
-    const repoConfig = {
-      owner: args.repository_owner,
-      name: args.repository_name,
-      branch: args.repository_branch,
-    };
+  execute: async (args: HuntingQueryFilters & { force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<HuntingQuery[]> => {
+    const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
-    const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
-    const analyzer = new ContentAnalyzer(github);
+    let queries: HuntingQuery[];
 
-    let queries = await analyzer.listHuntingQueries();
+    if (!args.force_refresh && isDefaultRepo) {
+      // Try to use pre-built index
+      const preBuiltIndex = loadPreBuiltIndex();
+      if (preBuiltIndex?.huntingQueries) {
+        queries = preBuiltIndex.huntingQueries;
+      } else {
+        // Fall back to GitHub
+        const github = new (await import('../repository/githubClient.js')).GitHubClient();
+        const analyzer = new ContentAnalyzer(github);
+        queries = await analyzer.listHuntingQueries();
+      }
+    } else {
+      // Fetch from GitHub (custom repo or force_refresh)
+      const repoConfig = {
+        owner: args.repository_owner,
+        name: args.repository_name,
+        branch: args.repository_branch,
+      };
+      const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+      const analyzer = new ContentAnalyzer(github);
+      queries = await analyzer.listHuntingQueries();
+    }
 
     // Apply filters
     if (args.solution) {
@@ -536,21 +619,38 @@ export const listPlaybooksTool = {
   description: 'List Microsoft Sentinel playbooks (Logic Apps)',
   inputSchema: z.object({
     solution: z.string().optional().describe('Filter by solution name'),
+    force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: { solution?: string; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Playbook[]> => {
-    const repoConfig = {
-      owner: args.repository_owner,
-      name: args.repository_name,
-      branch: args.repository_branch,
-    };
+  execute: async (args: { solution?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Playbook[]> => {
+    const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
-    const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
-    const analyzer = new ContentAnalyzer(github);
+    let playbooks: Playbook[];
 
-    let playbooks = await analyzer.listPlaybooks();
+    if (!args.force_refresh && isDefaultRepo) {
+      // Try to use pre-built index
+      const preBuiltIndex = loadPreBuiltIndex();
+      if (preBuiltIndex?.playbooks) {
+        playbooks = preBuiltIndex.playbooks;
+      } else {
+        // Fall back to GitHub
+        const github = new (await import('../repository/githubClient.js')).GitHubClient();
+        const analyzer = new ContentAnalyzer(github);
+        playbooks = await analyzer.listPlaybooks();
+      }
+    } else {
+      // Fetch from GitHub (custom repo or force_refresh)
+      const repoConfig = {
+        owner: args.repository_owner,
+        name: args.repository_name,
+        branch: args.repository_branch,
+      };
+      const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+      const analyzer = new ContentAnalyzer(github);
+      playbooks = await analyzer.listPlaybooks();
+    }
 
     // Apply filters
     if (args.solution) {
@@ -569,21 +669,38 @@ export const listParsersTool = {
   description: 'List Microsoft Sentinel parsers (KQL functions)',
   inputSchema: z.object({
     solution: z.string().optional().describe('Filter by solution name'),
+    force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: { solution?: string; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Parser[]> => {
-    const repoConfig = {
-      owner: args.repository_owner,
-      name: args.repository_name,
-      branch: args.repository_branch,
-    };
+  execute: async (args: { solution?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Parser[]> => {
+    const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
-    const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
-    const analyzer = new ContentAnalyzer(github);
+    let parsers: Parser[];
 
-    let parsers = await analyzer.listParsers();
+    if (!args.force_refresh && isDefaultRepo) {
+      // Try to use pre-built index
+      const preBuiltIndex = loadPreBuiltIndex();
+      if (preBuiltIndex?.parsers) {
+        parsers = preBuiltIndex.parsers;
+      } else {
+        // Fall back to GitHub
+        const github = new (await import('../repository/githubClient.js')).GitHubClient();
+        const analyzer = new ContentAnalyzer(github);
+        parsers = await analyzer.listParsers();
+      }
+    } else {
+      // Fetch from GitHub (custom repo or force_refresh)
+      const repoConfig = {
+        owner: args.repository_owner,
+        name: args.repository_name,
+        branch: args.repository_branch,
+      };
+      const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+      const analyzer = new ContentAnalyzer(github);
+      parsers = await analyzer.listParsers();
+    }
 
     // Apply filters
     if (args.solution) {
@@ -780,6 +897,10 @@ export const toolSchemas: Record<string, any> = {
         type: 'string',
         description: 'Filter by MITRE ATT&CK technique',
       },
+      force_refresh: {
+        type: 'boolean',
+        description: 'Set to true to fetch latest data from GitHub (default: uses pre-built index)',
+      },
       repository_owner: {
         type: 'string',
         description: 'GitHub repository owner (default: Azure)',
@@ -800,6 +921,10 @@ export const toolSchemas: Record<string, any> = {
       detection_id: {
         type: 'string',
         description: 'The detection rule ID',
+      },
+      force_refresh: {
+        type: 'boolean',
+        description: 'Set to true to fetch latest data from GitHub (default: uses pre-built index)',
       },
       repository_owner: {
         type: 'string',
@@ -827,6 +952,10 @@ export const toolSchemas: Record<string, any> = {
         type: 'string',
         description: 'Filter by workbook category',
       },
+      force_refresh: {
+        type: 'boolean',
+        description: 'Set to true to fetch latest data from GitHub (default: uses pre-built index)',
+      },
       repository_owner: {
         type: 'string',
         description: 'GitHub repository owner (default: Azure)',
@@ -847,6 +976,10 @@ export const toolSchemas: Record<string, any> = {
       workbook_id: {
         type: 'string',
         description: 'The workbook ID or file path',
+      },
+      force_refresh: {
+        type: 'boolean',
+        description: 'Set to true to fetch latest data from GitHub (default: uses pre-built index)',
       },
       repository_owner: {
         type: 'string',
@@ -878,6 +1011,10 @@ export const toolSchemas: Record<string, any> = {
         type: 'string',
         description: 'Filter by MITRE ATT&CK technique',
       },
+      force_refresh: {
+        type: 'boolean',
+        description: 'Set to true to fetch latest data from GitHub (default: uses pre-built index)',
+      },
       repository_owner: {
         type: 'string',
         description: 'GitHub repository owner (default: Azure)',
@@ -899,6 +1036,10 @@ export const toolSchemas: Record<string, any> = {
         type: 'string',
         description: 'Filter by solution name',
       },
+      force_refresh: {
+        type: 'boolean',
+        description: 'Set to true to fetch latest data from GitHub (default: uses pre-built index)',
+      },
       repository_owner: {
         type: 'string',
         description: 'GitHub repository owner (default: Azure)',
@@ -919,6 +1060,10 @@ export const toolSchemas: Record<string, any> = {
       solution: {
         type: 'string',
         description: 'Filter by solution name',
+      },
+      force_refresh: {
+        type: 'boolean',
+        description: 'Set to true to fetch latest data from GitHub (default: uses pre-built index)',
       },
       repository_owner: {
         type: 'string',

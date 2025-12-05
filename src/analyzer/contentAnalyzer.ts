@@ -95,13 +95,18 @@ export class ContentAnalyzer {
         const content = await this.github.getFileContent(file.path);
         const data = JSON.parse(content);
 
-        // Azure workbook structure
-        if (data.name || data.properties?.displayName) {
+        // Azure Workbook template structure
+        // These workbooks use fromTemplateId for the name
+        if (data.fromTemplateId || data.version) {
+          const workbookName = data.fromTemplateId ||
+                               file.path.split('/').pop()?.replace('.json', '') ||
+                               'Unknown';
+
           workbooks.push({
-            id: data.name || file.path,
-            name: data.properties?.displayName || data.name || 'Unknown',
-            description: data.properties?.description,
-            category: data.properties?.category,
+            id: data.fromTemplateId || file.path,
+            name: workbookName,
+            description: undefined, // Workbook templates don't have descriptions
+            category: undefined, // Would need to parse items to determine
             dataTypes: this.extractDataTypes(content),
             filePath: file.path,
             solution: this.extractSolutionName(file.path),

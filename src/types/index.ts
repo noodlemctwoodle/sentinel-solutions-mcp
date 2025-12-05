@@ -2,6 +2,8 @@
  * Type definitions for Microsoft Sentinel Solutions Analyzer
  */
 
+import { Detection, Workbook, HuntingQuery, Playbook, Parser } from './content.js';
+
 export interface SolutionMetadata {
   name: string;
   publisher: string;
@@ -70,10 +72,20 @@ export interface ParserMetadata {
 export interface AnalysisResult {
   mappings: TableMapping[];
   issues: AnalysisIssue[];
+  detections?: Detection[];
+  workbooks?: Workbook[];
+  huntingQueries?: HuntingQuery[];
+  playbooks?: Playbook[];
+  parsers?: Parser[];
   metadata: {
     totalSolutions: number;
     totalConnectors: number;
     totalTables: number;
+    totalDetections?: number;
+    totalWorkbooks?: number;
+    totalHuntingQueries?: number;
+    totalPlaybooks?: number;
+    totalParsers?: number;
     analysisDate: string;
     repositoryCommit?: string;
     preBuiltAt?: string;
