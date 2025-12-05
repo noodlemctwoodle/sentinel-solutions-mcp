@@ -1,0 +1,51 @@
+{
+  "name": "sentinel-analyzer-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for analyzing Azure Sentinel solutions and mapping data connectors to Log Analytics tables",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "sentinel-analyzer-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx src/index.ts",
+    "watch": "tsup --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "azure-sentinel",
+    "security",
+    "log-analytics",
+    "model-context-protocol"
+  ],
+  "author": "Toby Goulden",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/sentinel-analyzer-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/sentinel-analyzer-mcp/issues"
+  },
+  "homepage": "https://github.com/yourusername/sentinel-analyzer-mcp#readme",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.24.3",
+    "csv-writer": "^1.6.0",
+    "js-yaml": "^4.1.1",
+    "zod": "^4.1.13",
+    "zod-to-json-schema": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^24.10.1",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
