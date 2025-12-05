@@ -28,12 +28,30 @@ export interface GitHubTree {
 export class GitHubClient {
   private cache: Map<string, any> = new Map();
   private config: RepositoryConfig;
+  private token?: string;
 
   constructor(config?: Partial<RepositoryConfig>) {
     this.config = {
       ...DEFAULT_REPOSITORY_CONFIG,
       ...config,
     };
+    // Check MCP_GITHUB_TOKEN first, then fall back to GITHUB_TOKEN
+    this.token = process.env.MCP_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+  }
+
+  /**
+   * Get fetch headers with optional authentication
+   */
+  private getFetchHeaders(): HeadersInit {
+    const headers: HeadersInit = {
+      'Accept': 'application/vnd.github.v3+json',
+    };
+
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    return headers;
   }
 
   /**
@@ -50,7 +68,7 @@ export class GitHubClient {
     const url = `${GITHUB_API_BASE}/repos/${this.config.owner}/${this.config.name}/commits/${this.config.branch}`;
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, { headers: this.getFetchHeaders() });
       if (!response.ok) {
         throw new Error(`Failed to fetch commit: ${response.statusText}`);
       }
@@ -100,7 +118,7 @@ export class GitHubClient {
     const url = `${GITHUB_API_BASE}/repos/${this.config.owner}/${this.config.name}/contents/${path}?ref=${this.config.branch}`;
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, { headers: this.getFetchHeaders() });
       if (!response.ok) {
         throw new Error(`Failed to list ${path}: ${response.statusText}`);
       }
@@ -125,7 +143,7 @@ export class GitHubClient {
       }
 
       const commitUrl = `${GITHUB_API_BASE}/repos/${this.config.owner}/${this.config.name}/git/commits/${commitSha}`;
-      const commitResponse = await fetch(commitUrl);
+      const commitResponse = await fetch(commitUrl, { headers: this.getFetchHeaders() });
 
       if (!commitResponse.ok) {
         throw new Error(`Failed to fetch commit: ${commitResponse.statusText}`);
@@ -143,7 +161,7 @@ export class GitHubClient {
     const url = `${GITHUB_API_BASE}/repos/${this.config.owner}/${this.config.name}/git/trees/${treeSha}?recursive=1`;
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, { headers: this.getFetchHeaders() });
       if (!response.ok) {
         throw new Error(`Failed to fetch tree: ${response.statusText}`);
       }

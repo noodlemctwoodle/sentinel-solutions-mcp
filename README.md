@@ -116,7 +116,9 @@ export SENTINEL_REPO_OWNER=Azure                    # Default: Azure
 export SENTINEL_REPO_NAME=Azure-Sentinel            # Default: Azure-Sentinel
 export SENTINEL_REPO_BRANCH=master                  # Default: master
 export SENTINEL_SOLUTIONS_PATH=Solutions            # Default: Solutions
-export GITHUB_TOKEN=your_token_here                 # Optional: for higher API limits
+export MCP_GITHUB_TOKEN=your_token_here             # Optional: for higher API limits (preferred)
+# OR
+export GITHUB_TOKEN=your_token_here                 # Alternative token name
 
 npx sentinel-solutions-mcp
 ```
@@ -476,7 +478,9 @@ The server uses GitHub's public API which has rate limits:
 
 For heavy use or private repositories, set a GitHub personal access token:
 ```bash
-export GITHUB_TOKEN=your_token_here
+export MCP_GITHUB_TOKEN=your_token_here  # Preferred
+# OR
+export GITHUB_TOKEN=your_token_here      # Also supported
 npx sentinel-solutions-mcp
 ```
 
@@ -490,7 +494,7 @@ export SENTINEL_REPO_OWNER=MyOrganization
 export SENTINEL_REPO_NAME=PrivateSentinelRepo
 export SENTINEL_REPO_BRANCH=main
 export SENTINEL_SOLUTIONS_PATH=CustomSolutions
-export GITHUB_TOKEN=your_token_here  # Required for private repos
+export MCP_GITHUB_TOKEN=your_token_here  # Required for private repos
 
 npx sentinel-solutions-mcp
 ```

@@ -28,6 +28,8 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          MCP_GITHUB_TOKEN: ${{ secrets.MCP_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Run tests
         run: npm test --if-present
