@@ -41,6 +41,13 @@ Query any GitHub repository containing Sentinel solutions, not just the official
 
 ### Comprehensive Analysis
 - **Full Content Hub Coverage**: Analyzes all solutions in the Microsoft Sentinel Content Hub
+- **13 MCP Tools**: Complete content analysis including:
+  - Solution and connector analysis (6 tools)
+  - Detection rules/analytics (2 tools)
+  - Workbooks (2 tools)
+  - Hunting queries (1 tool)
+  - Playbooks/Logic Apps (1 tool)
+  - Parsers/KQL functions (1 tool)
 - **6 Detection Methods**: Implements all table detection strategies from the original Python tool:
   - graphQueries.{index}.baseQuery
   - sampleQueries.{index}.query
@@ -51,7 +58,6 @@ Query any GitHub repository containing Sentinel solutions, not just the official
 - **Tolerant Parsing**: Multi-stage JSON parsing with fallback strategies
 - **KQL Query Analysis**: Context-aware Kusto Query Language parser
 - **YAML Parser Resolution**: Recursive parser-to-table mapping with depth limiting
-- **MCP Integration**: Full MCP server implementation with 6 powerful tools
 
 ## Installation
 
@@ -232,6 +238,148 @@ Validate a connector JSON definition and extract tables.
 ```
 
 **Returns:** Validation result with errors, warnings, and extracted tables
+
+### 7. list_detections
+
+List and filter Microsoft Sentinel detection rules (analytics rules).
+
+**Parameters:**
+- `solution` (string, optional): Filter by solution name
+- `severity` (string, optional): Filter by severity (Informational, Low, Medium, High, Critical)
+- `tactic` (string, optional): Filter by MITRE ATT&CK tactic
+- `technique` (string, optional): Filter by MITRE ATT&CK technique
+- `repository_owner` (string, optional): GitHub repository owner (default: 'Azure')
+- `repository_name` (string, optional): Repository name (default: 'Azure-Sentinel')
+- `repository_branch` (string, optional): Branch to analyze (default: 'master')
+
+**Example:**
+```json
+{
+  "severity": "High",
+  "tactic": "Persistence"
+}
+```
+
+**Returns:** Array of detection rules with details including query, severity, tactics, and techniques
+
+### 8. get_detection_details
+
+Get detailed information about a specific detection rule.
+
+**Parameters:**
+- `detection_id` (string, required): The detection rule ID (GUID)
+- `repository_owner` (string, optional): GitHub repository owner (default: 'Azure')
+- `repository_name` (string, optional): Repository name (default: 'Azure-Sentinel')
+- `repository_branch` (string, optional): Branch to analyze (default: 'master')
+
+**Example:**
+```json
+{
+  "detection_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+}
+```
+
+**Returns:** Complete detection rule details including KQL query, entity mappings, and custom details
+
+### 9. list_workbooks
+
+List and filter Microsoft Sentinel workbooks.
+
+**Parameters:**
+- `solution` (string, optional): Filter by solution name
+- `category` (string, optional): Filter by workbook category
+- `repository_owner` (string, optional): GitHub repository owner (default: 'Azure')
+- `repository_name` (string, optional): Repository name (default: 'Azure-Sentinel')
+- `repository_branch` (string, optional): Branch to analyze (default: 'master')
+
+**Example:**
+```json
+{
+  "solution": "Azure Active Directory",
+  "category": "Identity"
+}
+```
+
+**Returns:** Array of workbooks with metadata and data types used
+
+### 10. get_workbook_details
+
+Get detailed information about a specific workbook.
+
+**Parameters:**
+- `workbook_id` (string, required): The workbook ID or file path
+- `repository_owner` (string, optional): GitHub repository owner (default: 'Azure')
+- `repository_name` (string, optional): Repository name (default: 'Azure-Sentinel')
+- `repository_branch` (string, optional): Branch to analyze (default: 'master')
+
+**Example:**
+```json
+{
+  "workbook_id": "Azure-Active-Directory-Workbook.json"
+}
+```
+
+**Returns:** Complete workbook details including visualization queries and data sources
+
+### 11. list_hunting_queries
+
+List and filter Microsoft Sentinel hunting queries.
+
+**Parameters:**
+- `solution` (string, optional): Filter by solution name
+- `tactic` (string, optional): Filter by MITRE ATT&CK tactic
+- `technique` (string, optional): Filter by MITRE ATT&CK technique
+- `repository_owner` (string, optional): GitHub repository owner (default: 'Azure')
+- `repository_name` (string, optional): Repository name (default: 'Azure-Sentinel')
+- `repository_branch` (string, optional): Branch to analyze (default: 'master')
+
+**Example:**
+```json
+{
+  "tactic": "Initial Access",
+  "technique": "T1566"
+}
+```
+
+**Returns:** Array of hunting queries with KQL, tactics, and techniques
+
+### 12. list_playbooks
+
+List Microsoft Sentinel playbooks (Logic Apps for automated response).
+
+**Parameters:**
+- `solution` (string, optional): Filter by solution name
+- `repository_owner` (string, optional): GitHub repository owner (default: 'Azure')
+- `repository_name` (string, optional): Repository name (default: 'Azure-Sentinel')
+- `repository_branch` (string, optional): Branch to analyze (default: 'master')
+
+**Example:**
+```json
+{
+  "solution": "Azure Active Directory"
+}
+```
+
+**Returns:** Array of playbooks with metadata and ARM template information
+
+### 13. list_parsers
+
+List Microsoft Sentinel parsers (KQL functions for data transformation).
+
+**Parameters:**
+- `solution` (string, optional): Filter by solution name
+- `repository_owner` (string, optional): GitHub repository owner (default: 'Azure')
+- `repository_name` (string, optional): Repository name (default: 'Azure-Sentinel')
+- `repository_branch` (string, optional): Branch to analyze (default: 'master')
+
+**Example:**
+```json
+{
+  "solution": "Cisco"
+}
+```
+
+**Returns:** Array of parsers with KQL function definitions
 
 ## How It Works
 

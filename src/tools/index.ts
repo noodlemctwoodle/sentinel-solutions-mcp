@@ -17,6 +17,8 @@ import {
 import { extractTablesFromConnector } from '../analyzer/tableExtractor.js';
 import { parseJsonTolerant } from '../analyzer/jsonParser.js';
 import { loadPreBuiltIndex, isIndexStale } from '../utils/indexLoader.js';
+import { ContentAnalyzer } from '../analyzer/contentAnalyzer.js';
+import { Detection, Workbook, HuntingQuery, Playbook, Parser, DetectionFilters, WorkbookFilters, HuntingQueryFilters } from '../types/content.js';
 
 // Global cache for analysis results
 let cachedAnalysisResult: AnalysisResult | null = null;
@@ -350,6 +352,249 @@ export const validateConnectorTool = {
 };
 
 /**
+ * Tool 7: List detections (analytics rules)
+ */
+export const listDetectionsTool = {
+  name: 'list_detections',
+  description: 'List and filter Microsoft Sentinel detection rules (analytics rules)',
+  inputSchema: z.object({
+    solution: z.string().optional().describe('Filter by solution name'),
+    severity: z.string().optional().describe('Filter by severity (Informational, Low, Medium, High, Critical)'),
+    tactic: z.string().optional().describe('Filter by MITRE ATT&CK tactic'),
+    technique: z.string().optional().describe('Filter by MITRE ATT&CK technique'),
+    repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
+    repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
+    repository_branch: z.string().optional().describe('Repository branch (default: master)'),
+  }),
+  execute: async (args: DetectionFilters & { repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Detection[]> => {
+    const repoConfig = {
+      owner: args.repository_owner,
+      name: args.repository_name,
+      branch: args.repository_branch,
+    };
+
+    const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+    const analyzer = new ContentAnalyzer(github);
+
+    let detections = await analyzer.listDetections();
+
+    // Apply filters
+    if (args.solution) {
+      detections = detections.filter(d => d.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
+    }
+    if (args.severity) {
+      detections = detections.filter(d => d.severity?.toLowerCase() === args.severity!.toLowerCase());
+    }
+    if (args.tactic) {
+      detections = detections.filter(d => d.tactics?.some(t => t.toLowerCase().includes(args.tactic!.toLowerCase())));
+    }
+    if (args.technique) {
+      detections = detections.filter(d => d.techniques?.some(t => t.toLowerCase().includes(args.technique!.toLowerCase())));
+    }
+
+    return detections;
+  },
+};
+
+/**
+ * Tool 8: Get detection details
+ */
+export const getDetectionDetailsTool = {
+  name: 'get_detection_details',
+  description: 'Get detailed information about a specific detection rule',
+  inputSchema: z.object({
+    detection_id: z.string().describe('The detection rule ID'),
+    repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
+    repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
+    repository_branch: z.string().optional().describe('Repository branch (default: master)'),
+  }),
+  execute: async (args: { detection_id: string; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Detection | null> => {
+    const repoConfig = {
+      owner: args.repository_owner,
+      name: args.repository_name,
+      branch: args.repository_branch,
+    };
+
+    const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+    const analyzer = new ContentAnalyzer(github);
+
+    const detections = await analyzer.listDetections();
+    return detections.find(d => d.id === args.detection_id) || null;
+  },
+};
+
+/**
+ * Tool 9: List workbooks
+ */
+export const listWorkbooksTool = {
+  name: 'list_workbooks',
+  description: 'List and filter Microsoft Sentinel workbooks',
+  inputSchema: z.object({
+    solution: z.string().optional().describe('Filter by solution name'),
+    category: z.string().optional().describe('Filter by workbook category'),
+    repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
+    repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
+    repository_branch: z.string().optional().describe('Repository branch (default: master)'),
+  }),
+  execute: async (args: WorkbookFilters & { repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Workbook[]> => {
+    const repoConfig = {
+      owner: args.repository_owner,
+      name: args.repository_name,
+      branch: args.repository_branch,
+    };
+
+    const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+    const analyzer = new ContentAnalyzer(github);
+
+    let workbooks = await analyzer.listWorkbooks();
+
+    // Apply filters
+    if (args.solution) {
+      workbooks = workbooks.filter(w => w.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
+    }
+    if (args.category) {
+      workbooks = workbooks.filter(w => w.category?.toLowerCase().includes(args.category!.toLowerCase()));
+    }
+
+    return workbooks;
+  },
+};
+
+/**
+ * Tool 10: Get workbook details
+ */
+export const getWorkbookDetailsTool = {
+  name: 'get_workbook_details',
+  description: 'Get detailed information about a specific workbook',
+  inputSchema: z.object({
+    workbook_id: z.string().describe('The workbook ID or file path'),
+    repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
+    repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
+    repository_branch: z.string().optional().describe('Repository branch (default: master)'),
+  }),
+  execute: async (args: { workbook_id: string; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Workbook | null> => {
+    const repoConfig = {
+      owner: args.repository_owner,
+      name: args.repository_name,
+      branch: args.repository_branch,
+    };
+
+    const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+    const analyzer = new ContentAnalyzer(github);
+
+    const workbooks = await analyzer.listWorkbooks();
+    return workbooks.find(w => w.id === args.workbook_id || w.filePath === args.workbook_id) || null;
+  },
+};
+
+/**
+ * Tool 11: List hunting queries
+ */
+export const listHuntingQueriesTool = {
+  name: 'list_hunting_queries',
+  description: 'List and filter Microsoft Sentinel hunting queries',
+  inputSchema: z.object({
+    solution: z.string().optional().describe('Filter by solution name'),
+    tactic: z.string().optional().describe('Filter by MITRE ATT&CK tactic'),
+    technique: z.string().optional().describe('Filter by MITRE ATT&CK technique'),
+    repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
+    repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
+    repository_branch: z.string().optional().describe('Repository branch (default: master)'),
+  }),
+  execute: async (args: HuntingQueryFilters & { repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<HuntingQuery[]> => {
+    const repoConfig = {
+      owner: args.repository_owner,
+      name: args.repository_name,
+      branch: args.repository_branch,
+    };
+
+    const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+    const analyzer = new ContentAnalyzer(github);
+
+    let queries = await analyzer.listHuntingQueries();
+
+    // Apply filters
+    if (args.solution) {
+      queries = queries.filter(q => q.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
+    }
+    if (args.tactic) {
+      queries = queries.filter(q => q.tactics?.some(t => t.toLowerCase().includes(args.tactic!.toLowerCase())));
+    }
+    if (args.technique) {
+      queries = queries.filter(q => q.techniques?.some(t => t.toLowerCase().includes(args.technique!.toLowerCase())));
+    }
+
+    return queries;
+  },
+};
+
+/**
+ * Tool 12: List playbooks
+ */
+export const listPlaybooksTool = {
+  name: 'list_playbooks',
+  description: 'List Microsoft Sentinel playbooks (Logic Apps)',
+  inputSchema: z.object({
+    solution: z.string().optional().describe('Filter by solution name'),
+    repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
+    repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
+    repository_branch: z.string().optional().describe('Repository branch (default: master)'),
+  }),
+  execute: async (args: { solution?: string; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Playbook[]> => {
+    const repoConfig = {
+      owner: args.repository_owner,
+      name: args.repository_name,
+      branch: args.repository_branch,
+    };
+
+    const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+    const analyzer = new ContentAnalyzer(github);
+
+    let playbooks = await analyzer.listPlaybooks();
+
+    // Apply filters
+    if (args.solution) {
+      playbooks = playbooks.filter(p => p.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
+    }
+
+    return playbooks;
+  },
+};
+
+/**
+ * Tool 13: List parsers
+ */
+export const listParsersTool = {
+  name: 'list_parsers',
+  description: 'List Microsoft Sentinel parsers (KQL functions)',
+  inputSchema: z.object({
+    solution: z.string().optional().describe('Filter by solution name'),
+    repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
+    repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
+    repository_branch: z.string().optional().describe('Repository branch (default: master)'),
+  }),
+  execute: async (args: { solution?: string; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Parser[]> => {
+    const repoConfig = {
+      owner: args.repository_owner,
+      name: args.repository_name,
+      branch: args.repository_branch,
+    };
+
+    const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+    const analyzer = new ContentAnalyzer(github);
+
+    let parsers = await analyzer.listParsers();
+
+    // Apply filters
+    if (args.solution) {
+      parsers = parsers.filter(p => p.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
+    }
+
+    return parsers;
+  },
+};
+
+/**
  * Helper: Ensure analysis has been run
  */
 async function ensureAnalysis(): Promise<void> {
@@ -415,6 +660,13 @@ export const allTools = [
   getSolutionDetailsTool,
   listTablesTool,
   validateConnectorTool,
+  listDetectionsTool,
+  getDetectionDetailsTool,
+  listWorkbooksTool,
+  getWorkbookDetailsTool,
+  listHuntingQueriesTool,
+  listPlaybooksTool,
+  listParsersTool,
 ];
 
 // Manual JSON schemas for MCP (zodToJsonSchema has compatibility issues)
@@ -508,5 +760,178 @@ export const toolSchemas: Record<string, any> = {
       },
     },
     required: ['connector_json'],
+  },
+  list_detections: {
+    type: 'object',
+    properties: {
+      solution: {
+        type: 'string',
+        description: 'Filter by solution name',
+      },
+      severity: {
+        type: 'string',
+        description: 'Filter by severity (Informational, Low, Medium, High, Critical)',
+      },
+      tactic: {
+        type: 'string',
+        description: 'Filter by MITRE ATT&CK tactic',
+      },
+      technique: {
+        type: 'string',
+        description: 'Filter by MITRE ATT&CK technique',
+      },
+      repository_owner: {
+        type: 'string',
+        description: 'GitHub repository owner (default: Azure)',
+      },
+      repository_name: {
+        type: 'string',
+        description: 'GitHub repository name (default: Azure-Sentinel)',
+      },
+      repository_branch: {
+        type: 'string',
+        description: 'Repository branch (default: master)',
+      },
+    },
+  },
+  get_detection_details: {
+    type: 'object',
+    properties: {
+      detection_id: {
+        type: 'string',
+        description: 'The detection rule ID',
+      },
+      repository_owner: {
+        type: 'string',
+        description: 'GitHub repository owner (default: Azure)',
+      },
+      repository_name: {
+        type: 'string',
+        description: 'GitHub repository name (default: Azure-Sentinel)',
+      },
+      repository_branch: {
+        type: 'string',
+        description: 'Repository branch (default: master)',
+      },
+    },
+    required: ['detection_id'],
+  },
+  list_workbooks: {
+    type: 'object',
+    properties: {
+      solution: {
+        type: 'string',
+        description: 'Filter by solution name',
+      },
+      category: {
+        type: 'string',
+        description: 'Filter by workbook category',
+      },
+      repository_owner: {
+        type: 'string',
+        description: 'GitHub repository owner (default: Azure)',
+      },
+      repository_name: {
+        type: 'string',
+        description: 'GitHub repository name (default: Azure-Sentinel)',
+      },
+      repository_branch: {
+        type: 'string',
+        description: 'Repository branch (default: master)',
+      },
+    },
+  },
+  get_workbook_details: {
+    type: 'object',
+    properties: {
+      workbook_id: {
+        type: 'string',
+        description: 'The workbook ID or file path',
+      },
+      repository_owner: {
+        type: 'string',
+        description: 'GitHub repository owner (default: Azure)',
+      },
+      repository_name: {
+        type: 'string',
+        description: 'GitHub repository name (default: Azure-Sentinel)',
+      },
+      repository_branch: {
+        type: 'string',
+        description: 'Repository branch (default: master)',
+      },
+    },
+    required: ['workbook_id'],
+  },
+  list_hunting_queries: {
+    type: 'object',
+    properties: {
+      solution: {
+        type: 'string',
+        description: 'Filter by solution name',
+      },
+      tactic: {
+        type: 'string',
+        description: 'Filter by MITRE ATT&CK tactic',
+      },
+      technique: {
+        type: 'string',
+        description: 'Filter by MITRE ATT&CK technique',
+      },
+      repository_owner: {
+        type: 'string',
+        description: 'GitHub repository owner (default: Azure)',
+      },
+      repository_name: {
+        type: 'string',
+        description: 'GitHub repository name (default: Azure-Sentinel)',
+      },
+      repository_branch: {
+        type: 'string',
+        description: 'Repository branch (default: master)',
+      },
+    },
+  },
+  list_playbooks: {
+    type: 'object',
+    properties: {
+      solution: {
+        type: 'string',
+        description: 'Filter by solution name',
+      },
+      repository_owner: {
+        type: 'string',
+        description: 'GitHub repository owner (default: Azure)',
+      },
+      repository_name: {
+        type: 'string',
+        description: 'GitHub repository name (default: Azure-Sentinel)',
+      },
+      repository_branch: {
+        type: 'string',
+        description: 'Repository branch (default: master)',
+      },
+    },
+  },
+  list_parsers: {
+    type: 'object',
+    properties: {
+      solution: {
+        type: 'string',
+        description: 'Filter by solution name',
+      },
+      repository_owner: {
+        type: 'string',
+        description: 'GitHub repository owner (default: Azure)',
+      },
+      repository_name: {
+        type: 'string',
+        description: 'GitHub repository name (default: Azure-Sentinel)',
+      },
+      repository_branch: {
+        type: 'string',
+        description: 'Repository branch (default: master)',
+      },
+    },
   },
 };
