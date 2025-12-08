@@ -1,6 +1,6 @@
 {
   "name": "sentinel-solutions-mcp",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "MCP server for analyzing Microsoft Sentinel solutions from any GitHub repository and mapping data connectors to Log Analytics tables",
   "type": "module",
   "main": "dist/index.js",
