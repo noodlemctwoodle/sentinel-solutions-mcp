@@ -38,8 +38,10 @@ Query any GitHub repository containing Sentinel solutions, not just the official
 
 ### Performance Optimizations
 
-- **Pre-built Index**: Ships with pre-built analysis for instant startup (< 1 second first query)
+- **Optimized Pre-built Index**: Ships with LLM-friendly index (3.8MB, excludes KQL queries) for instant startup (< 1 second first query)
+- **68% Size Reduction**: Optimized index is 68% smaller than full index for better token efficiency
 - **Direct GitHub Access**: Uses GitHub API - no cloning or downloads required!
+- **On-Demand Queries**: KQL queries fetched from GitHub only when explicitly needed
 - **Zero Setup**: Works immediately, no git repository cloning or storage needed
 - **Always Current**: Accesses latest data directly from GitHub
 
@@ -122,11 +124,13 @@ All tools support filtering by solution and querying custom/private repositories
 
 The server provides instant access to the Microsoft Sentinel Content Hub:
 
-1. **Pre-built Index**: Ships with a comprehensive 11MB index containing all 8,697+ items from the Azure-Sentinel repository
-2. **Instant Queries**: First query returns results in < 1 second using the pre-built index
-3. **GitHub API Access**: Optional live queries via GitHub API for custom repositories or latest updates
-4. **Smart Caching**: Results cached by repository commit SHA for optimal performance
-5. **Multi-Repository Support**: Query any GitHub repository containing Sentinel solutions
+1. **Optimized Pre-built Index**: Ships with a LLM-friendly 3.8MB index containing all 8,697+ items from the Azure-Sentinel repository
+2. **Token Efficient**: Excludes KQL queries from index (68% size reduction) for better LLM performance
+3. **Instant Queries**: First query returns results in < 1 second using the pre-built index
+4. **On-Demand Queries**: KQL queries fetched from GitHub API only when explicitly requested
+5. **GitHub API Access**: Optional live queries via GitHub API for custom repositories or latest updates
+6. **Smart Caching**: Results cached by repository commit SHA for optimal performance
+7. **Multi-Repository Support**: Query any GitHub repository containing Sentinel solutions
 
 The analyzer uses 6 sophisticated detection methods to identify Log Analytics tables from connector definitions, including KQL query parsing, ARM template analysis, and recursive parser resolution. See [USAGE.md](USAGE.md) for technical details.
 
@@ -136,7 +140,8 @@ Built with TypeScript and the Model Context Protocol SDK:
 
 - **MCP Server**: Stdio-based communication for AI agent integration
 - **Content Analyzer**: Parses all Sentinel content types from GitHub repositories
-- **Pre-built Index**: 11MB JSON index with 8,697+ items shipped with the package
+- **Optimized Pre-built Index**: 3.8MB LLM-friendly JSON index with 8,697+ items shipped with the package
+- **Token Efficiency**: Excludes KQL queries from index for 68% size reduction
 - **GitHub Client**: Direct API access with smart caching and rate limit handling
 - **Type Safety**: Full TypeScript definitions for all content types
 

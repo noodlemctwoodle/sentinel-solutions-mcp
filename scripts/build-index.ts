@@ -7,6 +7,7 @@
 import { GitHubClient } from '../src/repository/githubClient.js';
 import { SolutionLoader } from '../src/loaders/solutionLoader.js';
 import { ContentScanner } from '../src/loaders/contentScanner.js';
+import { OptimizedIndexBuilder } from '../src/utils/optimizedIndexBuilder.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -117,9 +118,18 @@ async function buildIndex() {
       fs.mkdirSync(distDir, { recursive: true });
     }
 
-    // Write to dist/pre-built-index.json
+    // Build optimized index (LLM-friendly, without queries)
+    console.log('\nBuilding optimized LLM-friendly index...');
+    const optimizedIndex = OptimizedIndexBuilder.build(indexData);
+
+    // Write optimized index as the primary index file
     const outputPath = path.join(distDir, 'pre-built-index.json');
-    fs.writeFileSync(outputPath, JSON.stringify(indexData, null, 2));
+    fs.writeFileSync(outputPath, JSON.stringify(optimizedIndex, null, 2));
+
+    // Calculate what size would have been with full index
+    const fullIndexSize = JSON.stringify(indexData).length;
+    const optimizedSize = JSON.stringify(optimizedIndex).length;
+    const reduction = (((fullIndexSize - optimizedSize) / fullIndexSize) * 100).toFixed(1);
 
     console.log('\n=================================================');
     console.log('   COMPLETE INDEX BUILD SUCCESSFUL');
@@ -145,9 +155,13 @@ async function buildIndex() {
     console.log(`   - Tutorials: ${tutorials.length}`);
     console.log(`   - Dashboards: ${dashboards.length}`);
     console.log(`   - Data Connectors: ${dataConnectors.length}`);
-    console.log(`\n📦 Index Details:`);
+    console.log(`\n📦 Optimized Index (LLM-Friendly):`);
     console.log(`   - Location: ${outputPath}`);
     console.log(`   - Size: ${(fs.statSync(outputPath).size / 1024 / 1024).toFixed(2)} MB`);
+    console.log(`   - Size Reduction vs Full Index: ${reduction}%`);
+    console.log(`   - Full Index Would Be: ${(fullIndexSize / 1024 / 1024).toFixed(2)} MB`);
+    console.log(`   - Note: Excludes KQL queries for token efficiency`);
+    console.log(`   - Queries available on-demand via GitHub API`);
     console.log(`   - Built: ${new Date().toISOString()}`);
     console.log('\n=================================================');
   } catch (error) {

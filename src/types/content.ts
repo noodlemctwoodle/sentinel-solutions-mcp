@@ -162,15 +162,23 @@ export interface DetectionFilters {
   tactic?: string;
   technique?: string;
   status?: string;
+  name?: string;
+  query_contains?: string;
+  path_contains?: string;
 }
 
 export interface WorkbookFilters {
   solution?: string;
   category?: string;
+  name?: string;
+  path_contains?: string;
 }
 
 export interface HuntingQueryFilters {
   solution?: string;
   tactic?: string;
   technique?: string;
+  name?: string;
+  query_contains?: string;
+  path_contains?: string;
 }

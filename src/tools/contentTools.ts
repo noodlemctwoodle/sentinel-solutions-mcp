@@ -27,17 +27,21 @@ import { loadPreBuiltIndex } from '../utils/indexLoader.js';
  */
 export const listHuntingQueriesTool = {
   name: 'list_hunting_queries',
-  description: 'List and filter Microsoft Sentinel hunting queries',
+  description: 'List and filter Microsoft Sentinel hunting queries - search by solution, tactic, technique, name, query content, or file path. Returns max 100 results by default.',
   inputSchema: z.object({
     solution: z.string().optional().describe('Filter by solution name'),
     tactic: z.string().optional().describe('Filter by MITRE ATT&CK tactic'),
     technique: z.string().optional().describe('Filter by MITRE ATT&CK technique'),
+    name: z.string().optional().describe('Search in query name/title'),
+    query_contains: z.string().optional().describe('Search for specific text in the KQL query (e.g., table names like "Syslog", "SecurityEvent")'),
+    path_contains: z.string().optional().describe('Search in file path (e.g., "Syslog", "Linux")'),
+    limit: z.number().optional().default(100).describe('Maximum number of results to return (default: 100, max: 500)'),
     force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: HuntingQueryFilters & { force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<HuntingQuery[]> => {
+  execute: async (args: HuntingQueryFilters & { limit?: number; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<HuntingQuery[]> => {
     const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
     let queries: HuntingQuery[];
@@ -75,8 +79,26 @@ export const listHuntingQueriesTool = {
     if (args.technique) {
       queries = queries.filter(q => q.techniques?.some(t => t.toLowerCase().includes(args.technique!.toLowerCase())));
     }
+    if (args.name) {
+      queries = queries.filter(q => q.name?.toLowerCase().includes(args.name!.toLowerCase()));
+    }
+    if (args.query_contains) {
+      const searchTerm = args.query_contains.toLowerCase();
+      queries = queries.filter(q => q.query?.toLowerCase().includes(searchTerm));
+    }
+    if (args.path_contains) {
+      queries = queries.filter(q => q.filePath?.toLowerCase().includes(args.path_contains!.toLowerCase()));
+    }
 
-    return queries;
+    // Apply limit (default 100, max 500)
+    const totalResults = queries.length;
+    const limit = Math.min(args.limit || 100, 500);
+
+    if (totalResults > limit) {
+      console.error(`⚠️  Returning ${limit} of ${totalResults} hunting queries. Use 'limit' parameter to adjust (max: 500).`);
+    }
+
+    return queries.slice(0, limit);
   },
 };
 
@@ -85,15 +107,18 @@ export const listHuntingQueriesTool = {
  */
 export const listPlaybooksTool = {
   name: 'list_playbooks',
-  description: 'List Microsoft Sentinel playbooks (Logic Apps)',
+  description: 'List Microsoft Sentinel playbooks (Logic Apps) - search by solution, name, or file path. Returns max 100 results by default.',
   inputSchema: z.object({
     solution: z.string().optional().describe('Filter by solution name'),
+    name: z.string().optional().describe('Search in playbook name/title'),
+    path_contains: z.string().optional().describe('Search in file path'),
+    limit: z.number().optional().default(100).describe('Maximum number of results to return (default: 100, max: 500)'),
     force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: { solution?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Playbook[]> => {
+  execute: async (args: { solution?: string; name?: string; path_contains?: string; limit?: number; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Playbook[]> => {
     const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
     let playbooks: Playbook[];
@@ -125,8 +150,22 @@ export const listPlaybooksTool = {
     if (args.solution) {
       playbooks = playbooks.filter(p => p.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
     }
+    if (args.name) {
+      playbooks = playbooks.filter(p => p.name?.toLowerCase().includes(args.name!.toLowerCase()));
+    }
+    if (args.path_contains) {
+      playbooks = playbooks.filter(p => p.filePath?.toLowerCase().includes(args.path_contains!.toLowerCase()));
+    }
 
-    return playbooks;
+    // Apply limit (default 100, max 500)
+    const totalResults = playbooks.length;
+    const limit = Math.min(args.limit || 100, 500);
+
+    if (totalResults > limit) {
+      console.error(`⚠️  Returning ${limit} of ${totalResults} playbooks. Use 'limit' parameter to adjust (max: 500).`);
+    }
+
+    return playbooks.slice(0, limit);
   },
 };
 
@@ -135,15 +174,19 @@ export const listPlaybooksTool = {
  */
 export const listParsersTool = {
   name: 'list_parsers',
-  description: 'List Microsoft Sentinel parsers (KQL functions)',
+  description: 'List Microsoft Sentinel parsers (KQL functions) - search by solution, name, query content, or file path. Returns max 100 results by default.',
   inputSchema: z.object({
     solution: z.string().optional().describe('Filter by solution name'),
+    name: z.string().optional().describe('Search in parser name/title'),
+    query_contains: z.string().optional().describe('Search for specific text in the KQL query'),
+    path_contains: z.string().optional().describe('Search in file path'),
+    limit: z.number().optional().default(100).describe('Maximum number of results to return (default: 100, max: 500)'),
     force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: { solution?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Parser[]> => {
+  execute: async (args: { solution?: string; name?: string; query_contains?: string; path_contains?: string; limit?: number; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Parser[]> => {
     const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
     let parsers: Parser[];
@@ -175,8 +218,26 @@ export const listParsersTool = {
     if (args.solution) {
       parsers = parsers.filter(p => p.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
     }
+    if (args.name) {
+      parsers = parsers.filter(p => p.name?.toLowerCase().includes(args.name!.toLowerCase()));
+    }
+    if (args.query_contains) {
+      const searchTerm = args.query_contains.toLowerCase();
+      parsers = parsers.filter(p => p.query?.toLowerCase().includes(searchTerm));
+    }
+    if (args.path_contains) {
+      parsers = parsers.filter(p => p.filePath?.toLowerCase().includes(args.path_contains!.toLowerCase()));
+    }
 
-    return parsers;
+    // Apply limit (default 100, max 500)
+    const totalResults = parsers.length;
+    const limit = Math.min(args.limit || 100, 500);
+
+    if (totalResults > limit) {
+      console.error(`⚠️  Returning ${limit} of ${totalResults} parsers. Use 'limit' parameter to adjust (max: 500).`);
+    }
+
+    return parsers.slice(0, limit);
   },
 };
 
@@ -185,15 +246,17 @@ export const listParsersTool = {
  */
 export const listWatchlistsTool = {
   name: 'list_watchlists',
-  description: 'List Microsoft Sentinel watchlists',
+  description: 'List Microsoft Sentinel watchlists - search by solution, name, or file path',
   inputSchema: z.object({
     solution: z.string().optional().describe('Filter by solution name'),
+    name: z.string().optional().describe('Search in watchlist name/title'),
+    path_contains: z.string().optional().describe('Search in file path'),
     force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: { solution?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Watchlist[]> => {
+  execute: async (args: { solution?: string; name?: string; path_contains?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Watchlist[]> => {
     const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
     let watchlists: Watchlist[];
@@ -221,6 +284,12 @@ export const listWatchlistsTool = {
     if (args.solution) {
       watchlists = watchlists.filter(w => w.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
     }
+    if (args.name) {
+      watchlists = watchlists.filter(w => w.name?.toLowerCase().includes(args.name!.toLowerCase()));
+    }
+    if (args.path_contains) {
+      watchlists = watchlists.filter(w => w.filePath?.toLowerCase().includes(args.path_contains!.toLowerCase()));
+    }
 
     return watchlists;
   },
@@ -231,15 +300,17 @@ export const listWatchlistsTool = {
  */
 export const listNotebooksTool = {
   name: 'list_notebooks',
-  description: 'List Microsoft Sentinel Jupyter notebooks',
+  description: 'List Microsoft Sentinel Jupyter notebooks - search by solution, name, or file path',
   inputSchema: z.object({
     solution: z.string().optional().describe('Filter by solution name'),
+    name: z.string().optional().describe('Search in notebook name/title'),
+    path_contains: z.string().optional().describe('Search in file path'),
     force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: { solution?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Notebook[]> => {
+  execute: async (args: { solution?: string; name?: string; path_contains?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Notebook[]> => {
     const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
     let notebooks: Notebook[];
@@ -267,6 +338,12 @@ export const listNotebooksTool = {
     if (args.solution) {
       notebooks = notebooks.filter(n => n.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
     }
+    if (args.name) {
+      notebooks = notebooks.filter(n => n.name?.toLowerCase().includes(args.name!.toLowerCase()));
+    }
+    if (args.path_contains) {
+      notebooks = notebooks.filter(n => n.filePath?.toLowerCase().includes(args.path_contains!.toLowerCase()));
+    }
 
     return notebooks;
   },
@@ -277,15 +354,18 @@ export const listNotebooksTool = {
  */
 export const listExplorationQueriesTool = {
   name: 'list_exploration_queries',
-  description: 'List Microsoft Sentinel exploration queries',
+  description: 'List Microsoft Sentinel exploration queries - search by solution, name, query content, or file path',
   inputSchema: z.object({
     solution: z.string().optional().describe('Filter by solution name'),
+    name: z.string().optional().describe('Search in query name/title'),
+    query_contains: z.string().optional().describe('Search for specific text in the KQL query'),
+    path_contains: z.string().optional().describe('Search in file path'),
     force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: { solution?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<ExplorationQuery[]> => {
+  execute: async (args: { solution?: string; name?: string; query_contains?: string; path_contains?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<ExplorationQuery[]> => {
     const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
     let queries: ExplorationQuery[];
@@ -313,6 +393,16 @@ export const listExplorationQueriesTool = {
     if (args.solution) {
       queries = queries.filter(q => q.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
     }
+    if (args.name) {
+      queries = queries.filter(q => q.name?.toLowerCase().includes(args.name!.toLowerCase()));
+    }
+    if (args.query_contains) {
+      const searchTerm = args.query_contains.toLowerCase();
+      queries = queries.filter(q => q.query?.toLowerCase().includes(searchTerm));
+    }
+    if (args.path_contains) {
+      queries = queries.filter(q => q.filePath?.toLowerCase().includes(args.path_contains!.toLowerCase()));
+    }
 
     return queries;
   },
@@ -323,15 +413,18 @@ export const listExplorationQueriesTool = {
  */
 export const listFunctionsTool = {
   name: 'list_functions',
-  description: 'List Microsoft Sentinel saved functions',
+  description: 'List Microsoft Sentinel saved functions - search by solution, name, query content, or file path',
   inputSchema: z.object({
     solution: z.string().optional().describe('Filter by solution name'),
+    name: z.string().optional().describe('Search in function name/title'),
+    query_contains: z.string().optional().describe('Search for specific text in the KQL query'),
+    path_contains: z.string().optional().describe('Search in file path'),
     force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: { solution?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<SentinelFunction[]> => {
+  execute: async (args: { solution?: string; name?: string; query_contains?: string; path_contains?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<SentinelFunction[]> => {
     const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
     let functions: SentinelFunction[];
@@ -359,6 +452,16 @@ export const listFunctionsTool = {
     if (args.solution) {
       functions = functions.filter(f => f.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
     }
+    if (args.name) {
+      functions = functions.filter(f => f.name?.toLowerCase().includes(args.name!.toLowerCase()));
+    }
+    if (args.query_contains) {
+      const searchTerm = args.query_contains.toLowerCase();
+      functions = functions.filter(f => f.query?.toLowerCase().includes(searchTerm));
+    }
+    if (args.path_contains) {
+      functions = functions.filter(f => f.filePath?.toLowerCase().includes(args.path_contains!.toLowerCase()));
+    }
 
     return functions;
   },
@@ -369,15 +472,17 @@ export const listFunctionsTool = {
  */
 export const listASIMContentTool = {
   name: 'list_asim_content',
-  description: 'List Microsoft Sentinel ASIM (Advanced Security Information Model) content',
+  description: 'List Microsoft Sentinel ASIM (Advanced Security Information Model) content - search by type, name, or file path',
   inputSchema: z.object({
     type: z.enum(['Parser', 'Schema', 'Documentation']).optional().describe('Filter by ASIM content type'),
+    name: z.string().optional().describe('Search in content name/title'),
+    path_contains: z.string().optional().describe('Search in file path'),
     force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: { type?: 'Parser' | 'Schema' | 'Documentation'; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<ASIMContent[]> => {
+  execute: async (args: { type?: 'Parser' | 'Schema' | 'Documentation'; name?: string; path_contains?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<ASIMContent[]> => {
     const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
     let content: ASIMContent[];
@@ -405,6 +510,12 @@ export const listASIMContentTool = {
     if (args.type) {
       content = content.filter(c => c.type === args.type);
     }
+    if (args.name) {
+      content = content.filter(c => c.name?.toLowerCase().includes(args.name!.toLowerCase()));
+    }
+    if (args.path_contains) {
+      content = content.filter(c => c.filePath?.toLowerCase().includes(args.path_contains!.toLowerCase()));
+    }
 
     return content;
   },
@@ -415,15 +526,18 @@ export const listASIMContentTool = {
  */
 export const listSummaryRulesTool = {
   name: 'list_summary_rules',
-  description: 'List Microsoft Sentinel summary rules',
+  description: 'List Microsoft Sentinel summary rules - search by solution, name, query content, or file path',
   inputSchema: z.object({
     solution: z.string().optional().describe('Filter by solution name'),
+    name: z.string().optional().describe('Search in rule name/title'),
+    query_contains: z.string().optional().describe('Search for specific text in the KQL query'),
+    path_contains: z.string().optional().describe('Search in file path'),
     force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: { solution?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<SummaryRule[]> => {
+  execute: async (args: { solution?: string; name?: string; query_contains?: string; path_contains?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<SummaryRule[]> => {
     const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
     let rules: SummaryRule[];
@@ -451,6 +565,16 @@ export const listSummaryRulesTool = {
     if (args.solution) {
       rules = rules.filter(r => r.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
     }
+    if (args.name) {
+      rules = rules.filter(r => r.name?.toLowerCase().includes(args.name!.toLowerCase()));
+    }
+    if (args.query_contains) {
+      const searchTerm = args.query_contains.toLowerCase();
+      rules = rules.filter(r => r.query?.toLowerCase().includes(searchTerm));
+    }
+    if (args.path_contains) {
+      rules = rules.filter(r => r.filePath?.toLowerCase().includes(args.path_contains!.toLowerCase()));
+    }
 
     return rules;
   },
@@ -461,15 +585,17 @@ export const listSummaryRulesTool = {
  */
 export const listToolsTool = {
   name: 'list_tools',
-  description: 'List Microsoft Sentinel tools and utilities',
+  description: 'List Microsoft Sentinel tools and utilities - search by category, name, or file path',
   inputSchema: z.object({
     category: z.string().optional().describe('Filter by tool category'),
+    name: z.string().optional().describe('Search in tool name/title'),
+    path_contains: z.string().optional().describe('Search in file path'),
     force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: { category?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Tool[]> => {
+  execute: async (args: { category?: string; name?: string; path_contains?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Tool[]> => {
     const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
     let tools: Tool[];
@@ -497,6 +623,12 @@ export const listToolsTool = {
     if (args.category) {
       tools = tools.filter(t => t.category?.toLowerCase().includes(args.category!.toLowerCase()));
     }
+    if (args.name) {
+      tools = tools.filter(t => t.name?.toLowerCase().includes(args.name!.toLowerCase()));
+    }
+    if (args.path_contains) {
+      tools = tools.filter(t => t.filePath?.toLowerCase().includes(args.path_contains!.toLowerCase()));
+    }
 
     return tools;
   },
@@ -507,14 +639,16 @@ export const listToolsTool = {
  */
 export const listTutorialsTool = {
   name: 'list_tutorials',
-  description: 'List Microsoft Sentinel tutorials and learning resources',
+  description: 'List Microsoft Sentinel tutorials and learning resources - search by name or file path',
   inputSchema: z.object({
+    name: z.string().optional().describe('Search in tutorial name/title'),
+    path_contains: z.string().optional().describe('Search in file path'),
     force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: { force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Tutorial[]> => {
+  execute: async (args: { name?: string; path_contains?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Tutorial[]> => {
     const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
     let tutorials: Tutorial[];
@@ -539,6 +673,13 @@ export const listTutorialsTool = {
       tutorials = await analyzer.listTutorials();
     }
 
+    if (args.name) {
+      tutorials = tutorials.filter(t => t.name?.toLowerCase().includes(args.name!.toLowerCase()));
+    }
+    if (args.path_contains) {
+      tutorials = tutorials.filter(t => t.filePath?.toLowerCase().includes(args.path_contains!.toLowerCase()));
+    }
+
     return tutorials;
   },
 };
@@ -548,15 +689,17 @@ export const listTutorialsTool = {
  */
 export const listDashboardsTool = {
   name: 'list_dashboards',
-  description: 'List Microsoft Sentinel dashboards',
+  description: 'List Microsoft Sentinel dashboards - search by solution, name, or file path',
   inputSchema: z.object({
     solution: z.string().optional().describe('Filter by solution name'),
+    name: z.string().optional().describe('Search in dashboard name/title'),
+    path_contains: z.string().optional().describe('Search in file path'),
     force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: { solution?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Dashboard[]> => {
+  execute: async (args: { solution?: string; name?: string; path_contains?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Dashboard[]> => {
     const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
     let dashboards: Dashboard[];
@@ -584,6 +727,12 @@ export const listDashboardsTool = {
     if (args.solution) {
       dashboards = dashboards.filter(d => d.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
     }
+    if (args.name) {
+      dashboards = dashboards.filter(d => d.name?.toLowerCase().includes(args.name!.toLowerCase()));
+    }
+    if (args.path_contains) {
+      dashboards = dashboards.filter(d => d.filePath?.toLowerCase().includes(args.path_contains!.toLowerCase()));
+    }
 
     return dashboards;
   },
@@ -594,15 +743,17 @@ export const listDashboardsTool = {
  */
 export const listDataConnectorsTool = {
   name: 'list_data_connectors',
-  description: 'List Microsoft Sentinel data connectors',
+  description: 'List Microsoft Sentinel data connectors - search by connector type, name, or file path',
   inputSchema: z.object({
     connector_type: z.string().optional().describe('Filter by connector type'),
+    name: z.string().optional().describe('Search in connector name/title'),
+    path_contains: z.string().optional().describe('Search in file path'),
     force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
     repository_branch: z.string().optional().describe('Repository branch (default: master)'),
   }),
-  execute: async (args: { connector_type?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<DataConnector[]> => {
+  execute: async (args: { connector_type?: string; name?: string; path_contains?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<DataConnector[]> => {
     const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
 
     let connectors: DataConnector[];
@@ -629,6 +780,12 @@ export const listDataConnectorsTool = {
 
     if (args.connector_type) {
       connectors = connectors.filter(c => c.connectorType?.toLowerCase().includes(args.connector_type!.toLowerCase()));
+    }
+    if (args.name) {
+      connectors = connectors.filter(c => c.name?.toLowerCase().includes(args.name!.toLowerCase()));
+    }
+    if (args.path_contains) {
+      connectors = connectors.filter(c => c.filePath?.toLowerCase().includes(args.path_contains!.toLowerCase()));
     }
 
     return connectors;
