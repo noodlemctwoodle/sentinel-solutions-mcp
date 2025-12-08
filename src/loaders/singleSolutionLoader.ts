@@ -1,5 +1,5 @@
 /**
- * Single Solution Analyzer - Optimized for querying one solution
+ * Single Solution Loader - Optimized for querying one solution
  * Only fetches files for the requested solution, not all 480+
  */
 
@@ -14,7 +14,7 @@ import { extractTablesFromConnector } from './tableExtractor.js';
 import { ParserResolver } from './parserResolver.js';
 import { GitHubClient } from '../repository/githubClient.js';
 
-export class SingleSolutionAnalyzer {
+export class SingleSolutionLoader {
   private github: GitHubClient;
 
   constructor(github: GitHubClient) {

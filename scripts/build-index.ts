@@ -5,8 +5,8 @@
  */
 
 import { GitHubClient } from '../src/repository/githubClient.js';
-import { SolutionAnalyzer } from '../src/analyzer/solutionAnalyzer.js';
-import { ContentAnalyzer } from '../src/analyzer/contentAnalyzer.js';
+import { SolutionLoader } from '../src/loaders/solutionLoader.js';
+import { ContentScanner } from '../src/loaders/contentScanner.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -19,57 +19,57 @@ async function buildIndex() {
 
   try {
     const github = new GitHubClient();
-    const solutionAnalyzer = new SolutionAnalyzer(github);
-    const contentAnalyzer = new ContentAnalyzer(github);
+    const solutionLoader = new SolutionLoader(github);
+    const contentScanner = new ContentScanner(github);
 
     console.log('Analyzing all Microsoft Sentinel solutions...');
-    const result = await solutionAnalyzer.analyze();
+    const result = await solutionLoader.analyze();
 
     console.log('\nAnalyzing all content types...');
     console.log('Fetching detections...');
-    const detections = await contentAnalyzer.listDetections();
+    const detections = await contentScanner.listDetections();
 
     console.log('Fetching workbooks...');
-    const workbooks = await contentAnalyzer.listWorkbooks();
+    const workbooks = await contentScanner.listWorkbooks();
 
     console.log('Fetching hunting queries...');
-    const huntingQueries = await contentAnalyzer.listHuntingQueries();
+    const huntingQueries = await contentScanner.listHuntingQueries();
 
     console.log('Fetching playbooks...');
-    const playbooks = await contentAnalyzer.listPlaybooks();
+    const playbooks = await contentScanner.listPlaybooks();
 
     console.log('Fetching parsers...');
-    const parsers = await contentAnalyzer.listParsers();
+    const parsers = await contentScanner.listParsers();
 
     console.log('Fetching watchlists...');
-    const watchlists = await contentAnalyzer.listWatchlists();
+    const watchlists = await contentScanner.listWatchlists();
 
     console.log('Fetching notebooks...');
-    const notebooks = await contentAnalyzer.listNotebooks();
+    const notebooks = await contentScanner.listNotebooks();
 
     console.log('Fetching exploration queries...');
-    const explorationQueries = await contentAnalyzer.listExplorationQueries();
+    const explorationQueries = await contentScanner.listExplorationQueries();
 
     console.log('Fetching functions...');
-    const functions = await contentAnalyzer.listFunctions();
+    const functions = await contentScanner.listFunctions();
 
     console.log('Fetching ASIM content...');
-    const asimContent = await contentAnalyzer.listASIMContent();
+    const asimContent = await contentScanner.listASIMContent();
 
     console.log('Fetching summary rules...');
-    const summaryRules = await contentAnalyzer.listSummaryRules();
+    const summaryRules = await contentScanner.listSummaryRules();
 
     console.log('Fetching tools...');
-    const tools = await contentAnalyzer.listTools();
+    const tools = await contentScanner.listTools();
 
     console.log('Fetching tutorials...');
-    const tutorials = await contentAnalyzer.listTutorials();
+    const tutorials = await contentScanner.listTutorials();
 
     console.log('Fetching dashboards...');
-    const dashboards = await contentAnalyzer.listDashboards();
+    const dashboards = await contentScanner.listDashboards();
 
     console.log('Fetching data connectors...');
-    const dataConnectors = await contentAnalyzer.listDataConnectors();
+    const dataConnectors = await contentScanner.listDataConnectors();
 
     // Add build metadata
     const indexData = {

@@ -1,6 +1,6 @@
 /**
- * Main solution analyzer orchestrating all analysis components
- * Uses GitHub API to analyze Azure Sentinel Solutions
+ * Main solution loader orchestrating all analysis components
+ * Uses GitHub API to load and analyze Azure Sentinel Solutions
  */
 
 import {
@@ -15,7 +15,7 @@ import { extractTablesFromConnector } from './tableExtractor.js';
 import { ParserResolver } from './parserResolver.js';
 import { GitHubClient, GitHubTreeItem } from '../repository/githubClient.js';
 
-export class SolutionAnalyzer {
+export class SolutionLoader {
   private github: GitHubClient;
   private mappings: TableMapping[] = [];
   private issues: AnalysisIssue[] = [];

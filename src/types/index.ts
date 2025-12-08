@@ -2,7 +2,7 @@
  * Type definitions for Microsoft Sentinel Solutions Analyzer
  */
 
-import { Detection, Workbook, HuntingQuery, Playbook, Parser } from './content.js';
+import { Detection, Workbook, HuntingQuery, Playbook, Parser, Watchlist, Notebook, ExplorationQuery, Function, ASIMContent, SummaryRule, Tool, Tutorial, Dashboard, DataConnector } from './content.js';
 
 export interface SolutionMetadata {
   name: string;
@@ -77,6 +77,16 @@ export interface AnalysisResult {
   huntingQueries?: HuntingQuery[];
   playbooks?: Playbook[];
   parsers?: Parser[];
+  watchlists?: Watchlist[];
+  notebooks?: Notebook[];
+  explorationQueries?: ExplorationQuery[];
+  functions?: Function[];
+  asimContent?: ASIMContent[];
+  summaryRules?: SummaryRule[];
+  tools?: Tool[];
+  tutorials?: Tutorial[];
+  dashboards?: Dashboard[];
+  dataConnectors?: DataConnector[];
   metadata: {
     totalSolutions: number;
     totalConnectors: number;
@@ -86,6 +96,16 @@ export interface AnalysisResult {
     totalHuntingQueries?: number;
     totalPlaybooks?: number;
     totalParsers?: number;
+    totalWatchlists?: number;
+    totalNotebooks?: number;
+    totalExplorationQueries?: number;
+    totalFunctions?: number;
+    totalASIMContent?: number;
+    totalSummaryRules?: number;
+    totalTools?: number;
+    totalTutorials?: number;
+    totalDashboards?: number;
+    totalDataConnectors?: number;
     analysisDate: string;
     repositoryCommit?: string;
     preBuiltAt?: string;

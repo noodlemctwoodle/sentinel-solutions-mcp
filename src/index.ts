@@ -9,7 +9,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { allTools, toolSchemas } from './tools/index.js';
+import { allTools } from './tools/index.js';
 
 // Create MCP server
 const server = new Server(
@@ -30,7 +30,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: allTools.map((tool) => ({
       name: tool.name,
       description: tool.description,
-      inputSchema: toolSchemas[tool.name],
+      inputSchema: tool.inputSchema,
     })),
   };
 });

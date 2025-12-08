@@ -48,7 +48,7 @@ Query any GitHub repository containing Sentinel solutions, not just the official
 - **Full Content Hub Coverage**: Analyzes the entire Microsoft Sentinel Content Hub repository
 - **15+ Content Types Indexed**: Pre-built index includes 2,579 detections, 519 workbooks, 2,463 hunting queries, 696 playbooks, 895 parsers, 51 watchlists, 6 functions, 105 ASIM items, 16 summary rules, 41 tools, and more
 - **8,697 Total Items**: Comprehensive index with 480 solutions and complete connector-table mappings
-- **19 MCP Tools**: Query all content types including solutions, connectors, detections, workbooks, hunting queries, playbooks, parsers, watchlists, notebooks, functions, ASIM content, and summary rules
+- **23 MCP Tools**: Query all content types including solutions, connectors, detections, workbooks, hunting queries, playbooks, parsers, watchlists, notebooks, functions, ASIM content, summary rules, tools, tutorials, dashboards, and data connectors
 - **6 Detection Methods**: Implements all table detection strategies from the original Python tool:
   - graphQueries.{index}.baseQuery
   - sampleQueries.{index}.query
@@ -87,7 +87,7 @@ For detailed usage instructions, configuration options, and examples, see [USAGE
 
 ## Available Tools
 
-The MCP server provides 19 tools for querying Microsoft Sentinel content:
+The MCP server provides 23 tools for querying Microsoft Sentinel content:
 
 ### Solution & Connector Analysis (6 tools)
 
@@ -98,7 +98,7 @@ The MCP server provides 19 tools for querying Microsoft Sentinel content:
 - `list_tables` - List all Log Analytics tables (all/custom/standard)
 - `validate_connector` - Validate connector JSON and extract tables
 
-### Content Analysis (13 tools)
+### Content Analysis (17 tools)
 
 - `list_detections` / `get_detection_details` - Detection rules with MITRE ATT&CK mappings
 - `list_workbooks` / `get_workbook_details` - Workbooks and visualizations
@@ -111,6 +111,10 @@ The MCP server provides 19 tools for querying Microsoft Sentinel content:
 - `list_functions` - Saved KQL functions
 - `list_asim_content` - ASIM (Advanced Security Information Model) content
 - `list_summary_rules` - Summary rules
+- `list_tools` - Sentinel tools and utilities
+- `list_tutorials` - Learning resources and tutorials
+- `list_dashboards` - Sentinel dashboards
+- `list_data_connectors` - Data connector definitions
 
 All tools support filtering by solution and querying custom/private repositories via the pre-built index or live GitHub API. See [USAGE.md](USAGE.md) for detailed documentation and examples.
 

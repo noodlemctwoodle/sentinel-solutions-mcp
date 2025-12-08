@@ -1,12 +1,12 @@
 /**
- * Content Analyzer for Sentinel detections, workbooks, hunting queries, etc.
+ * Content Scanner for Sentinel detections, workbooks, hunting queries, etc.
  */
 
 import { GitHubClient } from '../repository/githubClient.js';
 import * as yaml from 'js-yaml';
 import { Detection, Workbook, HuntingQuery, Playbook, Parser, Watchlist, Notebook, ExplorationQuery, Function as SentinelFunction, ASIMContent, SummaryRule, Tool, Tutorial, Dashboard, DataConnector } from '../types/content.js';
 
-export class ContentAnalyzer {
+export class ContentScanner {
   constructor(private github: GitHubClient) {}
 
   /**
