@@ -73,18 +73,36 @@ function convertOptimizedToFull(optimized: OptimizedIndex): AnalysisResult {
     })),
     issues: [],
     detections: optimized.content.detections.map((d) => ({
-      ...d,
+      id: d.id,
+      name: d.name,
+      description: d.description,
+      severity: d.severity as 'Informational' | 'Low' | 'Medium' | 'High' | 'Critical' | undefined,
+      status: d.status,
+      tactics: d.tactics,
+      techniques: d.techniques,
       query: undefined, // Excluded in optimized index
+      filePath: d.filePath,
+      solution: d.solution,
     })),
     workbooks: optimized.content.workbooks,
     huntingQueries: optimized.content.huntingQueries.map((q) => ({
-      ...q,
+      id: q.id,
+      name: q.name,
+      description: q.description,
+      tactics: q.tactics,
+      techniques: q.techniques,
       query: undefined, // Excluded in optimized index
+      filePath: q.filePath,
+      solution: q.solution,
     })),
     playbooks: optimized.content.playbooks,
     parsers: optimized.content.parsers.map((p) => ({
-      ...p,
+      id: p.id,
+      name: p.name,
+      description: p.description,
       query: undefined, // Excluded in optimized index
+      filePath: p.filePath,
+      solution: p.solution,
     })),
     metadata: {
       totalSolutions: optimized.stats.totalSolutions,
