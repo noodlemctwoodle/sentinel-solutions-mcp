@@ -30,30 +30,40 @@ if (existsSync(indexPath)) {
   const elapsed = Date.now() - start;
 
   console.log(`\n✅ Index loaded in ${elapsed}ms`);
+
+  // Detect if this is optimized format (version 2.x) or legacy format
+  const isOptimized = index.version && index.version.startsWith('2.');
+  const stats = isOptimized ? index.stats : index.metadata;
+  const generatedAt = isOptimized ? index.generatedAt : index.metadata?.preBuiltAt;
+  const version = isOptimized ? index.version : index.metadata?.version;
+
+  console.log('\nIndex format:', isOptimized ? 'Optimized (LLM-friendly, queries excluded)' : 'Legacy (full)');
   console.log('\nIndex contents:');
   console.log(`  Solutions & Connectors:`);
-  console.log(`    - Solutions: ${index.metadata.totalSolutions}`);
-  console.log(`    - Connectors: ${index.metadata.totalConnectors}`);
-  console.log(`    - Tables: ${index.metadata.totalTables}`);
+  console.log(`    - Solutions: ${stats.totalSolutions}`);
+  console.log(`    - Connectors: ${stats.totalConnectors}`);
+  console.log(`    - Tables: ${stats.totalTables}`);
   console.log(`  Content Types:`);
-  console.log(`    - Detections: ${index.metadata.totalDetections}`);
-  console.log(`    - Workbooks: ${index.metadata.totalWorkbooks}`);
-  console.log(`    - Hunting Queries: ${index.metadata.totalHuntingQueries}`);
-  console.log(`    - Playbooks: ${index.metadata.totalPlaybooks}`);
-  console.log(`    - Parsers: ${index.metadata.totalParsers}`);
-  console.log(`    - Watchlists: ${index.metadata.totalWatchlists}`);
-  console.log(`    - Notebooks: ${index.metadata.totalNotebooks}`);
-  console.log(`    - Exploration Queries: ${index.metadata.totalExplorationQueries}`);
-  console.log(`    - Functions: ${index.metadata.totalFunctions}`);
-  console.log(`    - ASIM Content: ${index.metadata.totalASIMContent}`);
-  console.log(`    - Summary Rules: ${index.metadata.totalSummaryRules}`);
-  console.log(`    - Tools: ${index.metadata.totalTools}`);
-  console.log(`    - Tutorials: ${index.metadata.totalTutorials}`);
-  console.log(`    - Dashboards: ${index.metadata.totalDashboards}`);
-  console.log(`    - Data Connectors: ${index.metadata.totalDataConnectors}`);
+  console.log(`    - Detections: ${stats.totalDetections}`);
+  console.log(`    - Workbooks: ${stats.totalWorkbooks}`);
+  console.log(`    - Hunting Queries: ${stats.totalHuntingQueries}`);
+  console.log(`    - Playbooks: ${stats.totalPlaybooks}`);
+  console.log(`    - Parsers: ${stats.totalParsers}`);
+  if (!isOptimized) {
+    console.log(`    - Watchlists: ${stats.totalWatchlists || 0}`);
+    console.log(`    - Notebooks: ${stats.totalNotebooks || 0}`);
+    console.log(`    - Exploration Queries: ${stats.totalExplorationQueries || 0}`);
+    console.log(`    - Functions: ${stats.totalFunctions || 0}`);
+    console.log(`    - ASIM Content: ${stats.totalASIMContent || 0}`);
+    console.log(`    - Summary Rules: ${stats.totalSummaryRules || 0}`);
+    console.log(`    - Tools: ${stats.totalTools || 0}`);
+    console.log(`    - Tutorials: ${stats.totalTutorials || 0}`);
+    console.log(`    - Dashboards: ${stats.totalDashboards || 0}`);
+    console.log(`    - Data Connectors: ${stats.totalDataConnectors || 0}`);
+  }
   console.log(`  Metadata:`);
-  console.log(`    - Built at: ${index.metadata.preBuiltAt}`);
-  console.log(`    - Version: ${index.metadata.version}`);
+  console.log(`    - Built at: ${generatedAt}`);
+  console.log(`    - Version: ${version}`);
 
   if (elapsed < 1000) {
     console.log('\n✅ PASS: Index loads in under 1 second');
