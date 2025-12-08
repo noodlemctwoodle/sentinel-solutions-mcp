@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { ContentScanner } from '../loaders/contentScanner.js';
 import { Detection, DetectionFilters } from '../types/content.js';
 import { loadPreBuiltIndex } from '../utils/indexLoader.js';
+import { filterDetections, applyLimit } from '../utils/contentFilters.js';
 
 /**
  * Tool 7: List detections
@@ -22,7 +23,7 @@ export const listDetectionsTool = {
     name: z.string().optional().describe('Search in detection name/title'),
     query_contains: z.string().optional().describe('Search for specific text in the KQL query (e.g., table names like "Syslog", "SecurityEvent")'),
     path_contains: z.string().optional().describe('Search in file path (e.g., "Syslog", "Linux")'),
-    limit: z.number().optional().default(100).describe('Maximum number of results to return (default: 100, max: 500)'),
+    limit: z.coerce.number().optional().default(1000).describe('Maximum number of results to return (default: 1000, max: 5000)'),
     force_refresh: z.boolean().optional().describe('Force refresh from GitHub'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
@@ -57,42 +58,11 @@ export const listDetectionsTool = {
       detections = await analyzer.listDetections();
     }
 
-    // Apply filters
-    if (args.solution) {
-      detections = detections.filter(d => d.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
-    }
-    if (args.severity) {
-      detections = detections.filter(d => d.severity?.toLowerCase() === args.severity!.toLowerCase());
-    }
-    if (args.tactic) {
-      detections = detections.filter(d => d.tactics?.some(t => t.toLowerCase().includes(args.tactic!.toLowerCase())));
-    }
-    if (args.technique) {
-      detections = detections.filter(d => d.techniques?.some(t => t.toLowerCase().includes(args.technique!.toLowerCase())));
-    }
-    if (args.status) {
-      detections = detections.filter(d => d.status?.toLowerCase().includes(args.status!.toLowerCase()));
-    }
-    if (args.name) {
-      detections = detections.filter(d => d.name?.toLowerCase().includes(args.name!.toLowerCase()));
-    }
-    if (args.query_contains) {
-      const searchTerm = args.query_contains.toLowerCase();
-      detections = detections.filter(d => d.query?.toLowerCase().includes(searchTerm));
-    }
-    if (args.path_contains) {
-      detections = detections.filter(d => d.filePath?.toLowerCase().includes(args.path_contains!.toLowerCase()));
-    }
+    // Apply filters using centralized utility
+    detections = filterDetections(detections, args);
 
-    // Apply limit (default 100, max 500)
-    const totalResults = detections.length;
-    const limit = Math.min(args.limit || 100, 500);
-
-    if (totalResults > limit) {
-      console.error(`⚠️  Returning ${limit} of ${totalResults} detections. Use 'limit' parameter to adjust (max: 500).`);
-    }
-
-    return detections.slice(0, limit);
+    // Apply limit using centralized utility
+    return applyLimit(detections, args.limit, 'detections');
   },
 };
 

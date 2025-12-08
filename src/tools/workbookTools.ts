@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { ContentScanner } from '../loaders/contentScanner.js';
 import { Workbook, WorkbookFilters } from '../types/content.js';
 import { loadPreBuiltIndex } from '../utils/indexLoader.js';
+import { filterWorkbooks, applyLimit } from '../utils/contentFilters.js';
 
 /**
  * Tool 9: List workbooks
@@ -18,7 +19,7 @@ export const listWorkbooksTool = {
     category: z.string().optional().describe('Filter by workbook category'),
     name: z.string().optional().describe('Search in workbook name/title'),
     path_contains: z.string().optional().describe('Search in file path'),
-    limit: z.number().optional().default(100).describe('Maximum number of results to return (default: 100, max: 500)'),
+    limit: z.coerce.number().optional().default(1000).describe('Maximum number of results to return (default: 1000, max: 5000)'),
     force_refresh: z.boolean().optional().describe('Force refresh from GitHub'),
     repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
     repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
@@ -49,29 +50,11 @@ export const listWorkbooksTool = {
       workbooks = await analyzer.listWorkbooks();
     }
 
-    // Apply filters
-    if (args.solution) {
-      workbooks = workbooks.filter(w => w.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
-    }
-    if (args.category) {
-      workbooks = workbooks.filter(w => w.category?.toLowerCase().includes(args.category!.toLowerCase()));
-    }
-    if (args.name) {
-      workbooks = workbooks.filter(w => w.name?.toLowerCase().includes(args.name!.toLowerCase()));
-    }
-    if (args.path_contains) {
-      workbooks = workbooks.filter(w => w.filePath?.toLowerCase().includes(args.path_contains!.toLowerCase()));
-    }
+    // Apply filters using centralized utility
+    workbooks = filterWorkbooks(workbooks, args);
 
-    // Apply limit (default 100, max 500)
-    const totalResults = workbooks.length;
-    const limit = Math.min(args.limit || 100, 500);
-
-    if (totalResults > limit) {
-      console.error(`⚠️  Returning ${limit} of ${totalResults} workbooks. Use 'limit' parameter to adjust (max: 500).`);
-    }
-
-    return workbooks.slice(0, limit);
+    // Apply limit using centralized utility
+    return applyLimit(workbooks, args.limit, 'workbooks');
   },
 };
 
