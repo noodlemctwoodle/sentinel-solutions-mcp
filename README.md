@@ -6,13 +6,14 @@ An MCP (Model Context Protocol) server that analyzes Microsoft Sentinel solution
 
 ```bash
 # Use with npx (recommended - instant startup with pre-built index)
-npx sentinel-solutions-mcp
+npx 
 
 # Or install globally
 npm install -g sentinel-solutions-mcp
 ```
 
 **Add to Claude Desktop** (`claude_desktop_config.json`):
+
 ```json
 {
   "mcpServers": {
@@ -27,27 +28,27 @@ npm install -g sentinel-solutions-mcp
 ## Features
 
 ### Multi-Repository Support
+
 Query any GitHub repository containing Sentinel solutions, not just the official Azure repo. Perfect for:
+
 - **Private/Custom Solutions**: Analyze your organization's private Sentinel repository
 - **Forked Repositories**: Test changes in your fork before contributing
 - **Testing Environments**: Analyze development or staging branches
 - **Community Solutions**: Explore third-party Sentinel solution repositories
 
 ### Performance Optimizations
+
 - **Pre-built Index**: Ships with pre-built analysis for instant startup (< 1 second first query)
 - **Direct GitHub Access**: Uses GitHub API - no cloning or downloads required!
 - **Zero Setup**: Works immediately, no git repository cloning or storage needed
 - **Always Current**: Accesses latest data directly from GitHub
 
 ### Comprehensive Analysis
-- **Full Content Hub Coverage**: Analyzes all solutions in the Microsoft Sentinel Content Hub
-- **13 MCP Tools**: Complete content analysis including:
-  - Solution and connector analysis (6 tools)
-  - Detection rules/analytics (2 tools)
-  - Workbooks (2 tools)
-  - Hunting queries (1 tool)
-  - Playbooks/Logic Apps (1 tool)
-  - Parsers/KQL functions (1 tool)
+
+- **Full Content Hub Coverage**: Analyzes the entire Microsoft Sentinel Content Hub repository
+- **15+ Content Types Indexed**: Pre-built index includes 2,579 detections, 519 workbooks, 2,463 hunting queries, 696 playbooks, 895 parsers, 51 watchlists, 6 functions, 105 ASIM items, 16 summary rules, 41 tools, and more
+- **8,697 Total Items**: Comprehensive index with 480 solutions and complete connector-table mappings
+- **19 MCP Tools**: Query all content types including solutions, connectors, detections, workbooks, hunting queries, playbooks, parsers, watchlists, notebooks, functions, ASIM content, and summary rules
 - **6 Detection Methods**: Implements all table detection strategies from the original Python tool:
   - graphQueries.{index}.baseQuery
   - sampleQueries.{index}.query
@@ -59,34 +60,17 @@ Query any GitHub repository containing Sentinel solutions, not just the official
 - **KQL Query Analysis**: Context-aware Kusto Query Language parser
 - **YAML Parser Resolution**: Recursive parser-to-table mapping with depth limiting
 
-## Installation
-
-### Via npx (Recommended)
+## Installation & Usage
 
 ```bash
+# Run with npx (recommended)
 npx sentinel-solutions-mcp
-```
 
-### Global Installation
-
-```bash
+# Or install globally
 npm install -g sentinel-solutions-mcp
 ```
 
-### From Source
-
-```bash
-git clone https://github.com/noodlemctwoodle/sentinel-solutions-mcp.git
-cd sentinel-solutions-mcp
-npm install
-npm run build
-```
-
-## Usage
-
-### With Claude Desktop
-
-Add to your `claude_desktop_config.json`:
+**Claude Desktop Configuration:**
 
 ```json
 {
@@ -99,348 +83,58 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-### With Other MCP Clients
-
-The server communicates via stdin/stdout using the MCP protocol. Configure your MCP client to run:
-
-```bash
-npx sentinel-solutions-mcp
-```
-
-### Environment Variables
-
-Configure repository access via environment variables:
-
-```bash
-export SENTINEL_REPO_OWNER=Azure                    # Default: Azure
-export SENTINEL_REPO_NAME=Azure-Sentinel            # Default: Azure-Sentinel
-export SENTINEL_REPO_BRANCH=master                  # Default: master
-export SENTINEL_SOLUTIONS_PATH=Solutions            # Default: Solutions
-export MCP_GITHUB_TOKEN=your_token_here             # Optional: for higher API limits (preferred)
-# OR
-export GITHUB_TOKEN=your_token_here                 # Alternative token name
-
-npx sentinel-solutions-mcp
-```
+For detailed usage instructions, configuration options, and examples, see [USAGE.md](USAGE.md).
 
 ## Available Tools
 
-### 1. analyze_solutions
-
-Run full analysis on all Microsoft Sentinel solutions from any GitHub repository.
-
-**Parameters:**
-- `force_refresh` (boolean, optional): Force re-clone repository
-- `output_format` (enum, optional): 'json' | 'csv' | 'summary' (default: 'json')
-- `repository_owner` (string, optional): GitHub repository owner (default: 'Azure')
-- `repository_name` (string, optional): Repository name (default: 'Azure-Sentinel')
-- `repository_branch` (string, optional): Branch to analyze (default: 'master')
-- `solutions_path` (string, optional): Path to solutions directory (default: 'Solutions')
-
-**Example (Default Repository):**
-```json
-{
-  "force_refresh": false,
-  "output_format": "summary"
-}
-```
-
-**Example (Custom Repository):**
-```json
-{
-  "repository_owner": "MyOrg",
-  "repository_name": "CustomSentinelSolutions",
-  "repository_branch": "main",
-  "solutions_path": "MySolutions",
-  "output_format": "json"
-}
-```
-
-**Returns:** Complete analysis results with connector-table mappings
-
-### 2. get_connector_tables
-
-Get table mappings for a specific connector.
-
-**Parameters:**
-- `connector_id` (string, required): The connector identifier
-
-**Example:**
-```json
-{
-  "connector_id": "AzureActiveDirectory"
-}
-```
-
-**Returns:** Connector details with all associated tables
-
-### 3. search_solutions
-
-Search solutions by name, publisher, or criteria.
-
-**Parameters:**
-- `query` (string, required): Search term
-- `publisher` (string, optional): Filter by publisher
-- `support_tier` (string, optional): Filter by support tier
-
-**Example:**
-```json
-{
-  "query": "Azure",
-  "publisher": "Microsoft"
-}
-```
-
-**Returns:** List of matching solutions with metadata
-
-### 4. get_solution_details
-
-Get comprehensive information about a specific solution.
-
-**Parameters:**
-- `solution_name` (string, required): Name of the solution
-
-**Example:**
-```json
-{
-  "solution_name": "Azure Active Directory"
-}
-```
-
-**Returns:** Full solution details including connectors and tables
-
-### 5. list_tables
-
-Get all unique Log Analytics tables across all solutions.
-
-**Parameters:**
-- `table_type` (enum, optional): 'all' | 'custom' | 'standard' (default: 'all')
-
-**Example:**
-```json
-{
-  "table_type": "custom"
-}
-```
-
-**Returns:** List of tables with connector associations
-
-### 6. validate_connector
-
-Validate a connector JSON definition and extract tables.
-
-**Parameters:**
-- `connector_json` (string, required): Connector JSON content
-
-**Example:**
-```json
-{
-  "connector_json": "{\"id\": \"test\", \"title\": \"Test Connector\"}"
-}
-```
-
-**Returns:** Validation result with errors, warnings, and extracted tables
-
-### 7. list_detections
-
-List and filter Microsoft Sentinel detection rules (analytics rules).
-
-**Parameters:**
-- `solution` (string, optional): Filter by solution name
-- `severity` (string, optional): Filter by severity (Informational, Low, Medium, High, Critical)
-- `tactic` (string, optional): Filter by MITRE ATT&CK tactic
-- `technique` (string, optional): Filter by MITRE ATT&CK technique
-- `repository_owner` (string, optional): GitHub repository owner (default: 'Azure')
-- `repository_name` (string, optional): Repository name (default: 'Azure-Sentinel')
-- `repository_branch` (string, optional): Branch to analyze (default: 'master')
-
-**Example:**
-```json
-{
-  "severity": "High",
-  "tactic": "Persistence"
-}
-```
-
-**Returns:** Array of detection rules with details including query, severity, tactics, and techniques
-
-### 8. get_detection_details
-
-Get detailed information about a specific detection rule.
-
-**Parameters:**
-- `detection_id` (string, required): The detection rule ID (GUID)
-- `repository_owner` (string, optional): GitHub repository owner (default: 'Azure')
-- `repository_name` (string, optional): Repository name (default: 'Azure-Sentinel')
-- `repository_branch` (string, optional): Branch to analyze (default: 'master')
-
-**Example:**
-```json
-{
-  "detection_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-}
-```
-
-**Returns:** Complete detection rule details including KQL query, entity mappings, and custom details
-
-### 9. list_workbooks
-
-List and filter Microsoft Sentinel workbooks.
-
-**Parameters:**
-- `solution` (string, optional): Filter by solution name
-- `category` (string, optional): Filter by workbook category
-- `repository_owner` (string, optional): GitHub repository owner (default: 'Azure')
-- `repository_name` (string, optional): Repository name (default: 'Azure-Sentinel')
-- `repository_branch` (string, optional): Branch to analyze (default: 'master')
-
-**Example:**
-```json
-{
-  "solution": "Azure Active Directory",
-  "category": "Identity"
-}
-```
-
-**Returns:** Array of workbooks with metadata and data types used
-
-### 10. get_workbook_details
-
-Get detailed information about a specific workbook.
-
-**Parameters:**
-- `workbook_id` (string, required): The workbook ID or file path
-- `repository_owner` (string, optional): GitHub repository owner (default: 'Azure')
-- `repository_name` (string, optional): Repository name (default: 'Azure-Sentinel')
-- `repository_branch` (string, optional): Branch to analyze (default: 'master')
-
-**Example:**
-```json
-{
-  "workbook_id": "Azure-Active-Directory-Workbook.json"
-}
-```
-
-**Returns:** Complete workbook details including visualization queries and data sources
-
-### 11. list_hunting_queries
-
-List and filter Microsoft Sentinel hunting queries.
-
-**Parameters:**
-- `solution` (string, optional): Filter by solution name
-- `tactic` (string, optional): Filter by MITRE ATT&CK tactic
-- `technique` (string, optional): Filter by MITRE ATT&CK technique
-- `repository_owner` (string, optional): GitHub repository owner (default: 'Azure')
-- `repository_name` (string, optional): Repository name (default: 'Azure-Sentinel')
-- `repository_branch` (string, optional): Branch to analyze (default: 'master')
-
-**Example:**
-```json
-{
-  "tactic": "Initial Access",
-  "technique": "T1566"
-}
-```
-
-**Returns:** Array of hunting queries with KQL, tactics, and techniques
-
-### 12. list_playbooks
-
-List Microsoft Sentinel playbooks (Logic Apps for automated response).
-
-**Parameters:**
-- `solution` (string, optional): Filter by solution name
-- `repository_owner` (string, optional): GitHub repository owner (default: 'Azure')
-- `repository_name` (string, optional): Repository name (default: 'Azure-Sentinel')
-- `repository_branch` (string, optional): Branch to analyze (default: 'master')
-
-**Example:**
-```json
-{
-  "solution": "Azure Active Directory"
-}
-```
-
-**Returns:** Array of playbooks with metadata and ARM template information
-
-### 13. list_parsers
-
-List Microsoft Sentinel parsers (KQL functions for data transformation).
-
-**Parameters:**
-- `solution` (string, optional): Filter by solution name
-- `repository_owner` (string, optional): GitHub repository owner (default: 'Azure')
-- `repository_name` (string, optional): Repository name (default: 'Azure-Sentinel')
-- `repository_branch` (string, optional): Branch to analyze (default: 'master')
-
-**Example:**
-```json
-{
-  "solution": "Cisco"
-}
-```
-
-**Returns:** Array of parsers with KQL function definitions
+The MCP server provides 19 tools for querying Microsoft Sentinel content:
+
+### Solution & Connector Analysis (6 tools)
+
+- `analyze_solutions` - Full analysis of all solutions with connector-table mappings
+- `get_connector_tables` - Get Log Analytics tables for a specific connector
+- `search_solutions` - Search solutions by name, publisher, or support tier
+- `get_solution_details` - Comprehensive details about a specific solution
+- `list_tables` - List all Log Analytics tables (all/custom/standard)
+- `validate_connector` - Validate connector JSON and extract tables
+
+### Content Analysis (13 tools)
+
+- `list_detections` / `get_detection_details` - Detection rules with MITRE ATT&CK mappings
+- `list_workbooks` / `get_workbook_details` - Workbooks and visualizations
+- `list_hunting_queries` - Threat hunting queries
+- `list_playbooks` - Automation playbooks (Logic Apps)
+- `list_parsers` - KQL parsers and functions
+- `list_watchlists` - Watchlist definitions
+- `list_notebooks` - Jupyter notebooks
+- `list_exploration_queries` - Exploration queries
+- `list_functions` - Saved KQL functions
+- `list_asim_content` - ASIM (Advanced Security Information Model) content
+- `list_summary_rules` - Summary rules
+
+All tools support filtering by solution and querying custom/private repositories via the pre-built index or live GitHub API. See [USAGE.md](USAGE.md) for detailed documentation and examples.
 
 ## How It Works
 
-### Repository Access
+The server provides instant access to the Microsoft Sentinel Content Hub:
 
-The server uses GitHub's API to access the Azure-Sentinel repository directly:
-- **No downloads**: Fetches files via HTTPS from GitHub
-- **No storage**: No local repository clone needed
-- **Always current**: Gets latest commit automatically
-- **In-memory caching**: Results cached by commit SHA for performance
+1. **Pre-built Index**: Ships with a comprehensive 11MB index containing all 8,697+ items from the Azure-Sentinel repository
+2. **Instant Queries**: First query returns results in < 1 second using the pre-built index
+3. **GitHub API Access**: Optional live queries via GitHub API for custom repositories or latest updates
+4. **Smart Caching**: Results cached by repository commit SHA for optimal performance
+5. **Multi-Repository Support**: Query any GitHub repository containing Sentinel solutions
 
-### Table Detection
-
-The analyzer uses 6 sophisticated detection methods to identify Log Analytics tables:
-
-1. **Graph Queries**: Analyzes `graphQueries[].baseQuery` fields
-2. **Sample Queries**: Parses `sampleQueries[].query` fields
-3. **Data Types**: Examines `dataTypes[].lastDataReceivedQuery`
-4. **Connectivity Criteria**: Checks `connectivityCriterias[].value`
-5. **ARM Variables**: Resolves `logAnalyticsTableId` template variables
-6. **Parser Resolution**: Recursively resolves YAML parser functions to tables
-
-### KQL Parser
-
-The built-in KQL parser:
-- Detects pipeline heads (tables before `|` operator)
-- Strips comments while preserving URLs
-- Removes field context (content after operators like `project`, `extend`, etc.)
-- Validates table name candidates
-- Applies plural corrections for common mistakes
-
-### Error Handling
-
-The analyzer implements tolerant parsing:
-- Multi-stage JSON parsing with fallback strategies
-- Continues processing on individual connector failures
-- Categorizes issues (parse errors, missing tables, etc.)
-- Generates detailed issue reports
+The analyzer uses 6 sophisticated detection methods to identify Log Analytics tables from connector definitions, including KQL query parsing, ARM template analysis, and recursive parser resolution. See [USAGE.md](USAGE.md) for technical details.
 
 ## Architecture
 
-```
-src/
-├── analyzer/
-│   ├── solutionAnalyzer.ts    # Main orchestration engine
-│   ├── kqlParser.ts            # KQL query parser
-│   ├── jsonParser.ts           # Tolerant JSON parsing
-│   ├── parserResolver.ts       # YAML parser resolution
-│   └── tableExtractor.ts       # Table detection logic
-├── repository/
-│   └── repoManager.ts          # Git clone/update management
-├── generators/
-│   └── csvGenerator.ts         # CSV/JSON output generation
-├── tools/
-│   └── index.ts                # MCP tool implementations
-├── types/
-│   └── index.ts                # TypeScript type definitions
-└── index.ts                    # MCP server entry point
-```
+Built with TypeScript and the Model Context Protocol SDK:
+
+- **MCP Server**: Stdio-based communication for AI agent integration
+- **Content Analyzer**: Parses all Sentinel content types from GitHub repositories
+- **Pre-built Index**: 11MB JSON index with 8,697+ items shipped with the package
+- **GitHub Client**: Direct API access with smart caching and rate limit handling
+- **Type Safety**: Full TypeScript definitions for all content types
 
 ## Performance
 
@@ -470,68 +164,23 @@ This TypeScript implementation provides:
 
 ## Troubleshooting
 
-### GitHub API Rate Limiting
+**GitHub API Rate Limits**: The pre-built index eliminates the need for GitHub API access in most cases. For custom repositories or live updates, use a GitHub token:
 
-The server uses GitHub's public API which has rate limits:
-- **Unauthenticated**: 60 requests/hour
-- **With GitHub Token**: 5000 requests/hour
-
-For heavy use or private repositories, set a GitHub personal access token:
 ```bash
-export MCP_GITHUB_TOKEN=your_token_here  # Preferred
-# OR
-export GITHUB_TOKEN=your_token_here      # Also supported
-npx sentinel-solutions-mcp
+export MCP_GITHUB_TOKEN=your_token_here
 ```
 
-### Custom Repository Configuration
+**Custom Repositories**: Configure via environment variables or tool parameters. See [USAGE.md](USAGE.md) for details.
 
-To analyze a custom or private repository:
-
-**Via Environment Variables:**
-```bash
-export SENTINEL_REPO_OWNER=MyOrganization
-export SENTINEL_REPO_NAME=PrivateSentinelRepo
-export SENTINEL_REPO_BRANCH=main
-export SENTINEL_SOLUTIONS_PATH=CustomSolutions
-export MCP_GITHUB_TOKEN=your_token_here  # Required for private repos
-
-npx sentinel-solutions-mcp
-```
-
-**Via Tool Parameters:**
-Use the repository configuration parameters directly in your MCP tool calls (see `analyze_solutions` documentation above).
-
-### Analysis Takes Too Long
-
-Use the `summary` output format for faster results:
-
-```json
-{
-  "output_format": "summary"
-}
-```
-
-Or use `force_refresh: false` to use cached results.
+**Performance**: The pre-built index provides instant results (< 1s). Custom repository analysis takes 30-60 seconds for first query, then cached.
 
 ## Development
 
-### Build
-
 ```bash
-npm run build
-```
-
-### Watch Mode
-
-```bash
-npm run watch
-```
-
-### Dev Mode
-
-```bash
-npm run dev
+npm install          # Install dependencies
+npm run build        # Build TypeScript + pre-built index
+npm run dev          # Run in development mode
+npm test             # Verify index loads correctly
 ```
 
 ## Contributing

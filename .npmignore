@@ -16,6 +16,7 @@ __tests__/
 *.spec.ts
 
 # Development scripts
+scripts/
 *.mjs
 test-*.js
 debug-*.js
@@ -31,6 +32,9 @@ list-*.js
 .idea/
 *.swp
 *.swo
+
+# GitHub
+.github/
 
 # OS
 .DS_Store

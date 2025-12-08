@@ -18,7 +18,7 @@ import { extractTablesFromConnector } from '../analyzer/tableExtractor.js';
 import { parseJsonTolerant } from '../analyzer/jsonParser.js';
 import { loadPreBuiltIndex, isIndexStale } from '../utils/indexLoader.js';
 import { ContentAnalyzer } from '../analyzer/contentAnalyzer.js';
-import { Detection, Workbook, HuntingQuery, Playbook, Parser, DetectionFilters, WorkbookFilters, HuntingQueryFilters } from '../types/content.js';
+import { Detection, Workbook, HuntingQuery, Playbook, Parser, DetectionFilters, WorkbookFilters, HuntingQueryFilters, Watchlist, Notebook, ExplorationQuery, Function, ASIMContent, SummaryRule } from '../types/content.js';
 
 // Global cache for analysis results
 let cachedAnalysisResult: AnalysisResult | null = null;
@@ -712,6 +712,282 @@ export const listParsersTool = {
 };
 
 /**
+ * Tool 14: List watchlists
+ */
+export const listWatchlistsTool = {
+  name: 'list_watchlists',
+  description: 'List Microsoft Sentinel watchlists',
+  inputSchema: z.object({
+    solution: z.string().optional().describe('Filter by solution name'),
+    force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
+    repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
+    repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
+    repository_branch: z.string().optional().describe('Repository branch (default: master)'),
+  }),
+  execute: async (args: { solution?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Watchlist[]> => {
+    const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
+
+    let watchlists: Watchlist[];
+
+    if (!args.force_refresh && isDefaultRepo) {
+      const preBuiltIndex = loadPreBuiltIndex();
+      if (preBuiltIndex?.watchlists) {
+        watchlists = preBuiltIndex.watchlists;
+      } else {
+        const github = new (await import('../repository/githubClient.js')).GitHubClient();
+        const analyzer = new ContentAnalyzer(github);
+        watchlists = await analyzer.listWatchlists();
+      }
+    } else {
+      const repoConfig = {
+        owner: args.repository_owner,
+        name: args.repository_name,
+        branch: args.repository_branch,
+      };
+      const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+      const analyzer = new ContentAnalyzer(github);
+      watchlists = await analyzer.listWatchlists();
+    }
+
+    if (args.solution) {
+      watchlists = watchlists.filter(w => w.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
+    }
+
+    return watchlists;
+  },
+};
+
+/**
+ * Tool 15: List notebooks
+ */
+export const listNotebooksTool = {
+  name: 'list_notebooks',
+  description: 'List Microsoft Sentinel Jupyter notebooks',
+  inputSchema: z.object({
+    solution: z.string().optional().describe('Filter by solution name'),
+    force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
+    repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
+    repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
+    repository_branch: z.string().optional().describe('Repository branch (default: master)'),
+  }),
+  execute: async (args: { solution?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Notebook[]> => {
+    const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
+
+    let notebooks: Notebook[];
+
+    if (!args.force_refresh && isDefaultRepo) {
+      const preBuiltIndex = loadPreBuiltIndex();
+      if (preBuiltIndex?.notebooks) {
+        notebooks = preBuiltIndex.notebooks;
+      } else {
+        const github = new (await import('../repository/githubClient.js')).GitHubClient();
+        const analyzer = new ContentAnalyzer(github);
+        notebooks = await analyzer.listNotebooks();
+      }
+    } else {
+      const repoConfig = {
+        owner: args.repository_owner,
+        name: args.repository_name,
+        branch: args.repository_branch,
+      };
+      const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+      const analyzer = new ContentAnalyzer(github);
+      notebooks = await analyzer.listNotebooks();
+    }
+
+    if (args.solution) {
+      notebooks = notebooks.filter(n => n.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
+    }
+
+    return notebooks;
+  },
+};
+
+/**
+ * Tool 16: List exploration queries
+ */
+export const listExplorationQueriesTool = {
+  name: 'list_exploration_queries',
+  description: 'List Microsoft Sentinel exploration queries',
+  inputSchema: z.object({
+    solution: z.string().optional().describe('Filter by solution name'),
+    force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
+    repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
+    repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
+    repository_branch: z.string().optional().describe('Repository branch (default: master)'),
+  }),
+  execute: async (args: { solution?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<ExplorationQuery[]> => {
+    const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
+
+    let queries: ExplorationQuery[];
+
+    if (!args.force_refresh && isDefaultRepo) {
+      const preBuiltIndex = loadPreBuiltIndex();
+      if (preBuiltIndex?.explorationQueries) {
+        queries = preBuiltIndex.explorationQueries;
+      } else {
+        const github = new (await import('../repository/githubClient.js')).GitHubClient();
+        const analyzer = new ContentAnalyzer(github);
+        queries = await analyzer.listExplorationQueries();
+      }
+    } else {
+      const repoConfig = {
+        owner: args.repository_owner,
+        name: args.repository_name,
+        branch: args.repository_branch,
+      };
+      const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+      const analyzer = new ContentAnalyzer(github);
+      queries = await analyzer.listExplorationQueries();
+    }
+
+    if (args.solution) {
+      queries = queries.filter(q => q.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
+    }
+
+    return queries;
+  },
+};
+
+/**
+ * Tool 17: List functions
+ */
+export const listFunctionsTool = {
+  name: 'list_functions',
+  description: 'List Microsoft Sentinel saved functions',
+  inputSchema: z.object({
+    solution: z.string().optional().describe('Filter by solution name'),
+    force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
+    repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
+    repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
+    repository_branch: z.string().optional().describe('Repository branch (default: master)'),
+  }),
+  execute: async (args: { solution?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<Function[]> => {
+    const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
+
+    let functions: Function[];
+
+    if (!args.force_refresh && isDefaultRepo) {
+      const preBuiltIndex = loadPreBuiltIndex();
+      if (preBuiltIndex?.functions) {
+        functions = preBuiltIndex.functions;
+      } else {
+        const github = new (await import('../repository/githubClient.js')).GitHubClient();
+        const analyzer = new ContentAnalyzer(github);
+        functions = await analyzer.listFunctions();
+      }
+    } else {
+      const repoConfig = {
+        owner: args.repository_owner,
+        name: args.repository_name,
+        branch: args.repository_branch,
+      };
+      const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+      const analyzer = new ContentAnalyzer(github);
+      functions = await analyzer.listFunctions();
+    }
+
+    if (args.solution) {
+      functions = functions.filter(f => f.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
+    }
+
+    return functions;
+  },
+};
+
+/**
+ * Tool 18: List ASIM content
+ */
+export const listASIMContentTool = {
+  name: 'list_asim_content',
+  description: 'List Microsoft Sentinel ASIM (Advanced Security Information Model) content',
+  inputSchema: z.object({
+    type: z.enum(['Parser', 'Schema', 'Documentation']).optional().describe('Filter by ASIM content type'),
+    force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
+    repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
+    repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
+    repository_branch: z.string().optional().describe('Repository branch (default: master)'),
+  }),
+  execute: async (args: { type?: 'Parser' | 'Schema' | 'Documentation'; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<ASIMContent[]> => {
+    const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
+
+    let content: ASIMContent[];
+
+    if (!args.force_refresh && isDefaultRepo) {
+      const preBuiltIndex = loadPreBuiltIndex();
+      if (preBuiltIndex?.asimContent) {
+        content = preBuiltIndex.asimContent;
+      } else {
+        const github = new (await import('../repository/githubClient.js')).GitHubClient();
+        const analyzer = new ContentAnalyzer(github);
+        content = await analyzer.listASIMContent();
+      }
+    } else {
+      const repoConfig = {
+        owner: args.repository_owner,
+        name: args.repository_name,
+        branch: args.repository_branch,
+      };
+      const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+      const analyzer = new ContentAnalyzer(github);
+      content = await analyzer.listASIMContent();
+    }
+
+    if (args.type) {
+      content = content.filter(c => c.type === args.type);
+    }
+
+    return content;
+  },
+};
+
+/**
+ * Tool 19: List summary rules
+ */
+export const listSummaryRulesTool = {
+  name: 'list_summary_rules',
+  description: 'List Microsoft Sentinel summary rules',
+  inputSchema: z.object({
+    solution: z.string().optional().describe('Filter by solution name'),
+    force_refresh: z.boolean().optional().describe('Set to true to fetch latest data from GitHub (default: uses pre-built index)'),
+    repository_owner: z.string().optional().describe('GitHub repository owner (default: Azure)'),
+    repository_name: z.string().optional().describe('GitHub repository name (default: Azure-Sentinel)'),
+    repository_branch: z.string().optional().describe('Repository branch (default: master)'),
+  }),
+  execute: async (args: { solution?: string; force_refresh?: boolean; repository_owner?: string; repository_name?: string; repository_branch?: string }): Promise<SummaryRule[]> => {
+    const isDefaultRepo = !args.repository_owner && !args.repository_name && !args.repository_branch;
+
+    let rules: SummaryRule[];
+
+    if (!args.force_refresh && isDefaultRepo) {
+      const preBuiltIndex = loadPreBuiltIndex();
+      if (preBuiltIndex?.summaryRules) {
+        rules = preBuiltIndex.summaryRules;
+      } else {
+        const github = new (await import('../repository/githubClient.js')).GitHubClient();
+        const analyzer = new ContentAnalyzer(github);
+        rules = await analyzer.listSummaryRules();
+      }
+    } else {
+      const repoConfig = {
+        owner: args.repository_owner,
+        name: args.repository_name,
+        branch: args.repository_branch,
+      };
+      const github = new (await import('../repository/githubClient.js')).GitHubClient(repoConfig);
+      const analyzer = new ContentAnalyzer(github);
+      rules = await analyzer.listSummaryRules();
+    }
+
+    if (args.solution) {
+      rules = rules.filter(r => r.solution?.toLowerCase().includes(args.solution!.toLowerCase()));
+    }
+
+    return rules;
+  },
+};
+
+/**
  * Helper: Ensure analysis has been run
  */
 async function ensureAnalysis(): Promise<void> {
@@ -784,6 +1060,12 @@ export const allTools = [
   listHuntingQueriesTool,
   listPlaybooksTool,
   listParsersTool,
+  listWatchlistsTool,
+  listNotebooksTool,
+  listExplorationQueriesTool,
+  listFunctionsTool,
+  listASIMContentTool,
+  listSummaryRulesTool,
 ];
 
 // Manual JSON schemas for MCP (zodToJsonSchema has compatibility issues)
@@ -1055,6 +1337,157 @@ export const toolSchemas: Record<string, any> = {
     },
   },
   list_parsers: {
+    type: 'object',
+    properties: {
+      solution: {
+        type: 'string',
+        description: 'Filter by solution name',
+      },
+      force_refresh: {
+        type: 'boolean',
+        description: 'Set to true to fetch latest data from GitHub (default: uses pre-built index)',
+      },
+      repository_owner: {
+        type: 'string',
+        description: 'GitHub repository owner (default: Azure)',
+      },
+      repository_name: {
+        type: 'string',
+        description: 'GitHub repository name (default: Azure-Sentinel)',
+      },
+      repository_branch: {
+        type: 'string',
+        description: 'Repository branch (default: master)',
+      },
+    },
+  },
+  list_watchlists: {
+    type: 'object',
+    properties: {
+      solution: {
+        type: 'string',
+        description: 'Filter by solution name',
+      },
+      force_refresh: {
+        type: 'boolean',
+        description: 'Set to true to fetch latest data from GitHub (default: uses pre-built index)',
+      },
+      repository_owner: {
+        type: 'string',
+        description: 'GitHub repository owner (default: Azure)',
+      },
+      repository_name: {
+        type: 'string',
+        description: 'GitHub repository name (default: Azure-Sentinel)',
+      },
+      repository_branch: {
+        type: 'string',
+        description: 'Repository branch (default: master)',
+      },
+    },
+  },
+  list_notebooks: {
+    type: 'object',
+    properties: {
+      solution: {
+        type: 'string',
+        description: 'Filter by solution name',
+      },
+      force_refresh: {
+        type: 'boolean',
+        description: 'Set to true to fetch latest data from GitHub (default: uses pre-built index)',
+      },
+      repository_owner: {
+        type: 'string',
+        description: 'GitHub repository owner (default: Azure)',
+      },
+      repository_name: {
+        type: 'string',
+        description: 'GitHub repository name (default: Azure-Sentinel)',
+      },
+      repository_branch: {
+        type: 'string',
+        description: 'Repository branch (default: master)',
+      },
+    },
+  },
+  list_exploration_queries: {
+    type: 'object',
+    properties: {
+      solution: {
+        type: 'string',
+        description: 'Filter by solution name',
+      },
+      force_refresh: {
+        type: 'boolean',
+        description: 'Set to true to fetch latest data from GitHub (default: uses pre-built index)',
+      },
+      repository_owner: {
+        type: 'string',
+        description: 'GitHub repository owner (default: Azure)',
+      },
+      repository_name: {
+        type: 'string',
+        description: 'GitHub repository name (default: Azure-Sentinel)',
+      },
+      repository_branch: {
+        type: 'string',
+        description: 'Repository branch (default: master)',
+      },
+    },
+  },
+  list_functions: {
+    type: 'object',
+    properties: {
+      solution: {
+        type: 'string',
+        description: 'Filter by solution name',
+      },
+      force_refresh: {
+        type: 'boolean',
+        description: 'Set to true to fetch latest data from GitHub (default: uses pre-built index)',
+      },
+      repository_owner: {
+        type: 'string',
+        description: 'GitHub repository owner (default: Azure)',
+      },
+      repository_name: {
+        type: 'string',
+        description: 'GitHub repository name (default: Azure-Sentinel)',
+      },
+      repository_branch: {
+        type: 'string',
+        description: 'Repository branch (default: master)',
+      },
+    },
+  },
+  list_asim_content: {
+    type: 'object',
+    properties: {
+      type: {
+        type: 'string',
+        enum: ['Parser', 'Schema', 'Documentation'],
+        description: 'Filter by ASIM content type',
+      },
+      force_refresh: {
+        type: 'boolean',
+        description: 'Set to true to fetch latest data from GitHub (default: uses pre-built index)',
+      },
+      repository_owner: {
+        type: 'string',
+        description: 'GitHub repository owner (default: Azure)',
+      },
+      repository_name: {
+        type: 'string',
+        description: 'GitHub repository name (default: Azure-Sentinel)',
+      },
+      repository_branch: {
+        type: 'string',
+        description: 'Repository branch (default: master)',
+      },
+    },
+  },
+  list_summary_rules: {
     type: 'object',
     properties: {
       solution: {

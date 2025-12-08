@@ -1,5 +1,5 @@
 {
-  "name": "sentinel-solutions",
+  "name": "sentinel-solutions-mcp",
   "version": "1.0.0",
   "description": "MCP server for analyzing Microsoft Sentinel solutions from any GitHub repository and mapping data connectors to Log Analytics tables",
   "type": "module",
@@ -16,6 +16,9 @@
     "build:index": "tsx scripts/build-index.ts",
     "dev": "tsx src/index.ts",
     "watch": "tsup --watch",
+    "test": "npm run test:index",
+    "test:index": "node scripts/test/test-index-load.mjs",
+    "test:mcp": "bash scripts/test/test-mcp.sh",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

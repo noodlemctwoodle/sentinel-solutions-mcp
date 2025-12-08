@@ -1,4 +1,4 @@
-# Usage Guide: Azure Sentinel Solutions Analyzer MCP Server
+# Usage Guide: Sentinel Solutions MCP Server
 
 ## Quick Start
 
@@ -6,11 +6,11 @@
 
 ```bash
 # Run directly via npx
-npx sentinel-analyzer-mcp
+npx sentinel-solutions-mcp
 
 # Or install globally
-npm install -g sentinel-analyzer-mcp
-sentinel-analyzer-mcp
+npm install -g sentinel-solutions-mcp
+sentinel-solutions-mcp
 ```
 
 ### 2. Configure with Claude Desktop
@@ -20,9 +20,9 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "sentinel-analyzer": {
+    "sentinel-solutions": {
       "command": "npx",
-      "args": ["sentinel-analyzer-mcp"]
+      "args": ["sentinel-solutions-mcp"]
     }
   }
 }
@@ -36,7 +36,7 @@ Once configured, you can ask Claude questions like:
 
 ### Discover Solutions
 
-```
+```text
 "Search for Azure Active Directory solutions"
 ```
 
@@ -44,7 +44,7 @@ Claude will use the `search_solutions` tool to find matching solutions.
 
 ### Analyze Connectors
 
-```
+```text
 "What tables does the Azure AD connector populate?"
 ```
 
@@ -52,7 +52,7 @@ Claude will use `get_connector_tables` to retrieve table mappings.
 
 ### Solution Details
 
-```
+```text
 "Give me details about the Microsoft 365 Defender solution"
 ```
 
@@ -60,7 +60,7 @@ Claude will use `get_solution_details` for comprehensive information.
 
 ### Find Tables
 
-```
+```text
 "List all custom log tables (_CL) across all solutions"
 ```
 
@@ -68,7 +68,7 @@ Claude will use `list_tables` with `table_type: 'custom'`.
 
 ### Validate Definitions
 
-```
+```text
 "Validate this connector JSON: {...}"
 ```
 
@@ -81,11 +81,13 @@ Claude will use `validate_connector` to check structure and extract tables.
 Performs complete analysis of all Azure Sentinel solutions.
 
 **When to use:**
+
 - First time running the server
 - Want to refresh data from latest Azure-Sentinel repository
 - Need comprehensive statistics
 
 **Parameters:**
+
 ```json
 {
   "force_refresh": false,
@@ -94,11 +96,13 @@ Performs complete analysis of all Azure Sentinel solutions.
 ```
 
 **Output formats:**
+
 - `summary`: Quick overview with top tables and issue counts
 - `json`: Complete analysis results
 - `csv`: Structured CSV data (useful for exports)
 
 **Example response (summary):**
+
 ```json
 {
   "summary": {
@@ -125,11 +129,13 @@ Performs complete analysis of all Azure Sentinel solutions.
 Retrieves tables for a specific connector.
 
 **When to use:**
+
 - Know the connector ID
 - Want to see which tables a connector uses
 - Need detection method details
 
 **Parameters:**
+
 ```json
 {
   "connector_id": "AzureActiveDirectory"
@@ -137,6 +143,7 @@ Retrieves tables for a specific connector.
 ```
 
 **Example response:**
+
 ```json
 {
   "connectorId": "AzureActiveDirectory",
@@ -159,11 +166,13 @@ Retrieves tables for a specific connector.
 Finds solutions matching criteria.
 
 **When to use:**
+
 - Exploring available solutions
 - Filter by publisher or support tier
 - Research specific vendors
 
 **Parameters:**
+
 ```json
 {
   "query": "Azure",
@@ -173,6 +182,7 @@ Finds solutions matching criteria.
 ```
 
 **Example response:**
+
 ```json
 {
   "solutions": [
@@ -193,11 +203,13 @@ Finds solutions matching criteria.
 Gets complete information about a solution.
 
 **When to use:**
+
 - Deep dive into a specific solution
 - Understand solution architecture
 - See all connectors and tables
 
 **Parameters:**
+
 ```json
 {
   "solution_name": "Azure Active Directory"
@@ -205,6 +217,7 @@ Gets complete information about a solution.
 ```
 
 **Example response:**
+
 ```json
 {
   "metadata": {
@@ -231,11 +244,13 @@ Gets complete information about a solution.
 Lists all unique tables across solutions.
 
 **When to use:**
+
 - Inventory of available tables
 - Filter custom vs standard tables
 - Understanding data landscape
 
 **Parameters:**
+
 ```json
 {
   "table_type": "custom"
@@ -243,11 +258,13 @@ Lists all unique tables across solutions.
 ```
 
 **Options:**
+
 - `all`: All tables
 - `custom`: Only custom logs (_CL suffix)
 - `standard`: Only standard Log Analytics tables
 
 **Example response:**
+
 ```json
 [
   {
@@ -269,11 +286,13 @@ Lists all unique tables across solutions.
 Validates connector JSON and extracts tables.
 
 **When to use:**
+
 - Building new connectors
 - Debugging connector definitions
 - Testing before deployment
 
 **Parameters:**
+
 ```json
 {
   "connector_json": "{\"id\": \"test\", \"title\": \"Test\", \"graphQueries\": [{\"baseQuery\": \"SecurityEvent | take 10\"}]}"
@@ -281,6 +300,7 @@ Validates connector JSON and extracts tables.
 ```
 
 **Example response:**
+
 ```json
 {
   "isValid": true,
@@ -307,7 +327,7 @@ When tables are extracted, the `detectionMethod` indicates how they were discove
 
 Custom log tables (ending in `_CL`) are prioritized during resolution:
 
-```
+```text
 "List all connectors that use custom log tables"
 ```
 
@@ -328,12 +348,14 @@ Issues are categorized by type:
 The server accesses the Azure-Sentinel repository via GitHub API:
 
 **How it works:**
+
 - Fetches files directly from GitHub (no cloning)
 - No local storage required
 - Caches file contents and analysis results in memory
 - Always uses the latest commit from master branch
 
 **Force refresh:**
+
 ```json
 {
   "force_refresh": true
@@ -361,6 +383,7 @@ Results are cached by repository commit hash. Subsequent queries are instant.
 ### 3. Specific Queries
 
 Instead of analyzing everything, use targeted tools:
+
 - `get_connector_tables` for single connector
 - `search_solutions` for filtered results
 - `list_tables` with type filter
@@ -371,7 +394,7 @@ Instead of analyzing everything, use targeted tools:
 
 Run `analyze_solutions` first:
 
-```
+```text
 "Analyze all Azure Sentinel solutions"
 ```
 
@@ -398,7 +421,7 @@ If you see rate limit errors, use a GitHub personal access token:
 export GITHUB_TOKEN=your_token_here
 ```
 
-Create a token at: https://github.com/settings/tokens (no special scopes required)
+Create a token at: [GitHub Tokens](https://github.com/settings/tokens) (no special scopes required)
 
 ### Server Won't Start
 
@@ -414,7 +437,7 @@ node --version  # Should be 18+
 
 ```python
 # In VS Code with Copilot Chat
-"@sentinel-analyzer what tables does the AWS connector use?"
+"@sentinel-solutions what tables does the AWS connector use?"
 ```
 
 ### With Custom Automation
@@ -422,7 +445,7 @@ node --version  # Should be 18+
 ```typescript
 import { spawn } from 'child_process';
 
-const server = spawn('npx', ['sentinel-analyzer-mcp']);
+const server = spawn('npx', ['sentinel-solutions-mcp']);
 
 // Send MCP request
 server.stdin.write(JSON.stringify({

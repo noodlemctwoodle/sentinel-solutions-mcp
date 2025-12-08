@@ -72,6 +72,90 @@ export interface Parser {
   solution?: string;
 }
 
+export interface Watchlist {
+  id: string;
+  name: string;
+  description?: string;
+  alias?: string;
+  filePath?: string;
+  solution?: string;
+}
+
+export interface Notebook {
+  id: string;
+  name: string;
+  description?: string;
+  tags?: string[];
+  filePath?: string;
+  solution?: string;
+}
+
+export interface ExplorationQuery {
+  id: string;
+  name: string;
+  description?: string;
+  query?: string;
+  filePath?: string;
+  solution?: string;
+}
+
+export interface Function {
+  id: string;
+  name: string;
+  description?: string;
+  query?: string;
+  filePath?: string;
+  solution?: string;
+}
+
+export interface ASIMContent {
+  id: string;
+  name: string;
+  type?: 'Parser' | 'Schema' | 'Documentation';
+  description?: string;
+  filePath?: string;
+}
+
+export interface SummaryRule {
+  id: string;
+  name: string;
+  description?: string;
+  query?: string;
+  filePath?: string;
+  solution?: string;
+}
+
+export interface Tool {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  filePath?: string;
+}
+
+export interface Tutorial {
+  id: string;
+  name: string;
+  description?: string;
+  filePath?: string;
+}
+
+export interface Dashboard {
+  id: string;
+  name: string;
+  description?: string;
+  filePath?: string;
+  solution?: string;
+}
+
+export interface DataConnector {
+  id: string;
+  name: string;
+  description?: string;
+  connectorType?: string;
+  filePath?: string;
+}
+
 export interface DetectionFilters {
   solution?: string;
   severity?: string;
